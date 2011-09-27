@@ -176,6 +176,7 @@ Ideally this thing should have some intelligence (i.e. mvc razor does a good job
 ### Rendering templates from code
 ---------------------
 When not compiled you must import the pyRazor library and call render:
+
     import pyRazor
 
     # Render template without giving a model
@@ -201,7 +202,9 @@ In the case where a template is compiled, just import the template directly and 
 The weird passing of inline template stuff is not supported in pyRazor. It will likely not be missed.
 
 ### Example
-Here is an example showing a few of the features off
+------------------
+Here is an example showing a few of the features off:
+
     @from datetime import datetime
     <html>
       <head>
