@@ -62,9 +62,11 @@ If/loop statements are treated similarly to designate scope:
 ### Nested Templates and Section Syntax
 -------------------
 Razor supports nested templates and the rendering of sections in view templates.  This mvc3 implementation looks like the following:
+
     <div>
       @RenderSection("name", optional: true)
     </div>
+
 This syntax assumes a few things, one that optional is the rare case, and two that if the section is not defined in the nested template that nothing should be printed out (in realty there is a syntax to handle an optional section not existing but it is a few extra lines of boilerplate).
 
 pyRazor handles these sections slightly differently, first assuming that sections are optional by default and second by making it very easy to define behavior if a section doesn't exist.  Note: if a section is required and doesn't exist a parsing exception is thrown.
