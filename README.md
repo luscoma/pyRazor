@@ -69,25 +69,26 @@ Razor supports nested templates and the rendering of sections in view templates.
 
 This syntax assumes a few things, one that optional is the rare case, and two that if the section is not defined in the nested template that nothing should be printed out (in realty there is a syntax to handle an optional section not existing but it is a few extra lines of boilerplate).
 
-pyRazor handles these sections slightly differently, first assuming that sections are optional by default and second by making it very easy to define behavior if a section doesn't exist.  Note: if a section is required and doesn't exist a parsing exception is thrown.
+pyRazor handles these sections slightly differently.  First it allows you to specify a default output for an optional section and second it assumes sections are required unless some optional output is provided.  Note: if a section is required and doesn't exist a parsing exception is thrown.
 
     <div>
       @section("name"):
         <p>This paragraph is rendered if no section is in the nested template</p>
-      @section("somethingRequired": required=true)
+        <p>This one too, actually by specifing this default implementation this section became optional!</p>
+      @section("somethingRequired")
     </div>
 
 In a template that provides these sections we just specify a similar section directive:
 
     @section("name"):
-      <p>This is a paragraph that is provided by the child</p>
+      <p>This is a paragraph that is provided by the child and will override the parents implementation</p>
     @section("somethingRequired"):
-      <p>If this is not implemented an exception is thrown<p>
+      <p>If this was not implemented an exception is thrown<p>
     <div>
       This this element would be rendered in place of the body directive
     </div>
 
-In case you were curious the `@RenderBody()` syntax is not valid in pyRazor either instead use the `@body` directive to specify where wrapped templates should be rendered.
+In case you were curious the `@RenderBody()` syntax is not valid in pyRazor either instead use the `@body` directive to specify where a wrapped templates should be rendered.
 
 pyRazor also uses a slightly different syntax for specifing parent templates similar to the jquery syntax.  In standard razor the LayoutPage variable is included in all views and is set in the template:
 
@@ -123,7 +124,7 @@ All razor output that is printed is automagically html-escaped.  If for some rea
 There is also a @debug that is only visible if the debug:true paramter is passed into the template:
 
     @debug("Some text to be written to the document")
-    @!debug("<p>Some html to be written to the document")
+    @!debug("<p>Some html to be written to the document</p>")
 
 The @() syntax evaluates whatever single expression is in the () and prints it out:
 
@@ -134,10 +135,9 @@ The @() syntax evaluates whatever single expression is in the () and prints it o
 MVC3 includes helpers which are basically functions declared in markup that output markup.  They effectively function as a mini template.  The syntax for helper in pyRazor is similar to mvc3:
 
     @helper listrow(text):
-      @{
-        length = len(text);
-        mod = length % 6;
-      }
+      @:
+        length = len(text)
+        mod = length % 6
       <div>
         <div>Item</div>
         <div>@text</div>
@@ -165,7 +165,7 @@ A typical c# razor template my look similar to the following. Notice how it take
       <p>Somethign else: @name</p>
     }
 
-This approch works incredibly well for xml/html structured documents; however, it breaks down for other formats such as json:
+This approach works incredibly well for xml/html structured documents; however, it breaks down for other formats such as json:
 
     {
       @if (name == "alex") {
@@ -174,7 +174,7 @@ This approch works incredibly well for xml/html structured documents; however, i
       }
     }
 
-This will fail to parse due to the two lines after if statement being interpreted as python code instead of json code.  This case is handled in the standard implementation by wrapping any content in a <text></text> tag.
+This will fail to parse due to the two lines after the if statement being interpreted as code instead of json output.  This case is handled in the mvc implementation by wrapping any content in a <text></text> tag.
 
     {
       @if (name == "alex") {
