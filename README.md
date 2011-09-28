@@ -29,11 +29,11 @@ If no model is specified via a `@model` directive any object can be passed into 
 
 ### @view
 ----------------------------------
-The view object is an instance of RazorView and is available to all views at render time.  This object holds any relevant view objects and serves as a way to extends the razor system in the future.  Currently view has the model, data, and helper attributes (view.data and view.helpers are explained in the next section).
+The view object is an instance of RazorView and is available to all views at render time.  This object holds any relevant view objects and serves as a way to extends the razor system in the future.  Currently view has the model, data, and helper attributes (view.data and view.helpers are explained in further down).
 
-### @ViewBag, @view.data
+### @view.data
 ----------------------------------
-In razor each view also has a ViewBag which is effectively a dictionary of key/values that are passed into the view at runtime.  All views have this and it is never null.  Since I've never liked the name ViewBag we provide access to this lookup class via the `ViewBag` and `view.data` variables with `ViewBag` strongly discouraged.  These objects are an instance of `ViewData` and can have any property set before the view is rendered.  This property is a good way to pass one-off flags and values that are not necessarily part of the view model.  When properties are accessed that don't exist the class is setup to return None.
+In razor each view also has a ViewBag which is effectively a dictionary of key/values that are passed into the view at runtime.  All views have this and it is never null.  Since I've never liked the name ViewBag we provide access to this lookup class via the `view.data` variable.  This objects is an instance of `ViewData` and can have any property set before the view is rendered.  This property is a good way to pass one-off flags and values that are not necessarily part of the view model.  When properties are accessed that don't exist the class is setup to return None.
 
     @if view.data.errors == None:
         <p>Do things</p>
