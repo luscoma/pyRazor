@@ -1,28 +1,29 @@
-## pyRazor
----------------------------------
+# pyRazor
+### A python implementation of the razor engine
+--------------------------------
 The Razor engine is a view renderer for ASP.net MVC3 that displays html views in a simple an intuitive manor.  It is a very lightweight engine which interferes very little with the view code.  The engine does take advantage of some of the structural aspects of html making it slightly wordy for non html/xml structured documents.
 
-That said the goal of this implementation is to implement as much of the razor template engine as make sense in pure python code to be used to render pyr files on the fly.  Optionally these templates should be compilable into py files for simplified/faster execution.  Some minor modifications to the sytax can be afforded especially considering python and c# differences when it comes to indent levels and code block designation but on the whole the concepts and tokens are directly ported when possible.  Any variation is reported in the remaining portions of this document.
+That said the goal of this implementation is to implement a view template engine that is based on the razor engine but suitable for python and simplifies some of the sharp corners of razor when working on non-xml/html.  Ideally these templates should be compilable into py files for simplified/faster execution.  Some minor modifications to the sytax can be afforded especially considering python and c# differences when it comes to indent levels and code block designation but on the whole the concepts and tokens are directly ported when possible.  Any variation from mvc's razor is reported in the remaining portions of this document.
 
 ### @model
 ---------------------------------
-@model is used in razor to denote the model a view is expecting.  This is expecailly important in statically type languages such as csharp so that accurate type checking can be performed on view code.  In a dynamic language such as python this is not near as important so by default this directive is not required and defaults to any object (similar to how c# 4.0 defaults to @model dynamic).  We do however provide support for model in two ways:
+In razor a view has access to a model parameter which has a handful of properties useful in view construction.  This is especially important in statically type languages such as csharp so that accurate type checking can be performed on view code.  In pyRazor the model is accessed via the @model directive.
 
-    @model SomeClass
+    <div>
+      @model.someParameter
+    </div>
 
-This method basically wraps the template with a call to isinstance throwing an exception if the model is not of the specified type.  This prevents any model being used that isnt the exact type.
+In python static type checking is not an issue but we still support the model directive in two different ways:
+
+    @model SomePackage.SomeClass
+
+This method wraps the template with a call to isinstance throwing an exception if the model provided at render time is not of the specified type.  This prevents any model being used that isnt the exact type.
 
 In some cases it may be beneficial to allow subclasses of the specified type, in that case a variation of the model syntax is allowed:
 
     @model extends SomeClass
 
-This basically wraps the template with a call to issubclass instead of isinstance.
-
-Regardless of rather an explicit model is specified access to the model in the view is provided via a model parameter passed into the view at render time:
-
-    <div>
-      @model.someParameter
-    </div>
+This basically wraps the template with a call to issubclass instead of isinstance providing the same functionality.  It is important to note the python None can not be passed in at render time, worst case model is an empty class with no properties.
 
 ### @import and @from
 -----------------------------------
@@ -227,6 +228,13 @@ When not compiled you must import the pyRazor library and call render:
 
     # In this case we also specify a few extra paramters
     pyRazor.render("../path/to.template", "The model is a string", debug=true)
+    
+    # Pass in a template inline (Not recommended)
+    pyRazor.render("@Model", "The model is a string")
+    
+    # Just build a view class from an inline template
+    # (Still not really recommended, but available)
+    pyRazor.build("@Model", "The model is a string")
 
 In the case where a template is compiled, just import the template directly and call its render method minus the template path:
     import myTemplate
