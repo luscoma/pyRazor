@@ -1,6 +1,5 @@
-# pyRazor
-## Pure python razor template engine implementation
-----------------------
+## pyRazor
+---------------------------------
 The Razor engine is a view renderer for ASP.net MVC3 that displays html views in a simple an intuitive manor.  It is a very lightweight engine which interferes very little with the view code.  The engine does take advantage of some of the structural aspects of html making it slightly wordy for non html/xml structured documents.
 
 That said the goal of this implementation is to implement as much of the razor template engine as make sense in pure python code to be used to render pyr files on the fly.  Optionally these templates should be compilable into py files for simplified/faster execution.  Some minor modifications to the sytax can be afforded especially considering python and c# differences when it comes to indent levels and code block designation but on the whole the concepts and tokens are directly ported when possible.  Any variation is reported in the remaining portions of this document.
