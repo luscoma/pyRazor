@@ -54,10 +54,12 @@ These statements should be placed at the top of your view before any code that u
 ### Comments
 -----------------------------
 Comments are supported in a few forms, first the `@#` syntax which can be used in two ways:
+
     @# This line is a comment
     <p>Some Text@#only this is a comment#@ other than the comment</p>
 
 In addition the multiline syntax can be used to specify multi-line comments
+
     @:
         # Comment line one
         # Comment Line two
