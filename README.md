@@ -7,49 +7,68 @@ That said the goal of this implementation is to implement a view template engine
 
 ### @model
 ---------------------------------
-In razor a view has access to a model parameter which has a handful of properties useful in view construction.  This is especially important in statically type languages such as csharp so that accurate type checking can be performed on view code.  In pyRazor the model is accessed via the @model directive.
+In razor a view has access to a model parameter which has a handful of properties useful in view construction.  This is especially important in statically type languages such as csharp so that accurate type checking can be performed on view code.  In pyRazor the model is accessed via the @model directive:
 
     <div>
       @model.someParameter
     </div>
 
-In python static type checking is not an issue but we still support the model directive in two different ways:
+In python static type checking is not an issue but we still support the model directive since it allows you to better structure your view's expectations.  A model can be explicitly declared in two different ways:
 
     @model SomePackage.SomeClass
 
-This method wraps the template with a call to isinstance throwing an exception if the model provided at render time is not of the specified type.  This prevents any model being used that isnt the exact type.
+By specifing this directive a model must be passed in and it must be an instance of the given type.  This is checked via a call to isinstance.  If the model fails this check the template will fail to render and throw an exception.
 
-In some cases it may be beneficial to allow subclasses of the specified type, in that case a variation of the model syntax is allowed:
+In some cases it may be beneficial to allow all subclasses of the specified type, in that case a variation of the model syntax is allowed:
 
     @model extends SomeClass
 
-This basically wraps the template with a call to issubclass instead of isinstance providing the same functionality.  It is important to note the python None can not be passed in at render time, worst case model is an empty class with no properties.
+This basically wraps the template with a call to issubclass instead of isinstance providing the same functionality.  
+
+If no model is specified via a `@model` directive any object can be passed into the view as it's model.  This also doesn't prevent None from being the view model.
+
+### @view
+----------------------------------
+The view object is an instance of RazorView and is available to all views at render time.  This object holds any relevant view objects and serves as a way to extends the razor system in the future.  Currently view has the model, data, and helper attributes (view.data and view.helpers are explained in the next section).
+
+### @ViewBag, @view.data
+----------------------------------
+In razor each view also has a ViewBag which is effectively a dictionary of key/values that are passed into the view at runtime.  All views have this and it is never null.  Since I've never liked the name ViewBag we provide access to this lookup class via the `ViewBag` and `view.data` variables with `ViewBag` strongly discouraged.  These objects are an instance of `ViewData` and can have any property set before the view is rendered.  This property is a good way to pass one-off flags and values that are not necessarily part of the view model.  When properties are accessed that don't exist the class is setup to return None.
+
+    @if view.data.errors == None:
+        <p>Do things</p>
 
 ### @import and @from
 -----------------------------------
-View code will likely access python library or even custom code so it will need to be imported into the view similar to a standard python file.  This is provided via the @import and @from directives:
+View code will likely access the python library or even custom library code so it will need to be imported into the built view similar to a standard python file.  This is provided via the @import and @from directives:
 
     @import something
     @from something_else import *
 
-These statements should be placed at the top of your view before any code is accessed that uses the import.  NOTE: these are really just shorthand the identical functionality can be achieved using the code block directive:
+These statements should be placed at the top of your view before any code that uses the import.  NOTE: these are really just shorthand the identical functionality can be achieved using the code block directive:
 
     @:
       import something
       from something_else import *
 
+### Comments
+-----------------------------
+Comments are supported in a few forms, first the `@#` syntax which can be used in two ways:
+    @# This line is a comment
+    <p>Some Text@#only this is a comment#@ other than the comment</p>
+
+In addition the multiline syntax can be used to specify multi-line comments
+    @:
+        # Comment line one
+        # Comment Line two
+
 ### Indentation vs Brackets
 ----------------------------
-The razor engine was originally designed for C# code which requires brackets to denote code blocks.  pyRazor adopts the methodology of python and makes multiline razor directives indent sensitive.  For example the multiline code block:
-
-    @{
-      name = "csharp example";
-    }
-
-In pyrazor this is implemented using the `@:` directive:
+The razor engine was originally designed for C# code which requires brackets to denote code blocks.  pyRazor adopts the methodology of python and makes multiline razor directives indent sensitive.  For example the pyRazor multiline code block:
 
     @:
       name = "csharp example";
+      # A comment
 
 Note that the code must not start on the same line as the @: directive and must be indented at least 2 spaces or 1 tab relative to the @:.
 
@@ -60,26 +79,36 @@ If/loop statements are treated similarly to designate scope:
     <p> this tag is always printed</p>
 
 ### Nested Templates and Section Syntax
--------------------
-Razor supports nested templates and the rendering of sections in view templates.  This mvc3 implementation looks like the following:
+-----------------------------------------
+Razor supports nested templates and the rendering of sections in view templates via wrapping and template rendering.
 
+Wrapped templates are implemented similar to the jQuery wrap method and very useful in defining template heirarchies.  
+
+When using `@wrap` the currently executing template specifies its parent template to render itself within.  That is to say the current template is rendered, then the specified parent template is rendered and the child template is put into the parent.  The syntax for `@wrap` is fairly straight forward:
+
+    @wrap ../some/relative/path.pyr
+
+Importantly the template to wrap the current template in can be choosen dynamically by the view and can be declared at any place in the child template.  In the case where multiple wrap statements are encountered the last one wins.
+
+    @if Model.something:
+      @wrap ../something.pyr
+    else:
+      @wrap ../else.pyr
+
+When wrapping a template the parent template must specify a `@body` to desginate where to render the wrapped template's output.  In addition pyRazor allows for sections to allow child templates to render data in multiple areas of a parent template.  These sections can either be required or optional can be rendered by child templates. Note: if a section is required and doesn't exist in the child template a parsing exception is thrown.
+
+    @# Parent Template
     <div>
-      @RenderSection("name", optional: true)
-    </div>
-
-This syntax assumes a few things, one that optional is the rare case, and two that if the section is not defined in the nested template that nothing should be printed out (in realty there is a syntax to handle an optional section not existing but it is a few extra lines of boilerplate).
-
-pyRazor handles these sections slightly differently.  First it allows you to specify a default output for an optional section and second it assumes sections are required unless some optional output is provided.  Note: if a section is required and doesn't exist a parsing exception is thrown.
-
-    <div>
-      @section("name"):
+      @section("optional section"):
         <p>This paragraph is rendered if no section is in the nested template</p>
         <p>This one too, actually by specifing this default implementation this section became optional!</p>
-      @section("somethingRequired")
+      @section("required section")
+      @body
     </div>
 
-In a template that provides these sections we just specify a similar section directive:
+In a wrapped child template these sections are implemented using the same syntax. NOTE: A parsing exception is thrown if a section defined in a child template is not present in the parent template:
 
+    @# Child Template
     @section("name"):
       <p>This is a paragraph that is provided by the child and will override the parents implementation</p>
     @section("somethingRequired"):
@@ -88,33 +117,13 @@ In a template that provides these sections we just specify a similar section dir
       This this element would be rendered in place of the body directive
     </div>
 
-In case you were curious the `@RenderBody()` syntax is not valid in pyRazor either instead use the `@body` directive to specify where a wrapped templates should be rendered.
+pyRazor also defines the `@render` directive to directly render another template inline into the current template.  This is the opposite of wrap and is useful for creating and rendering reusable components into a parent template.  Unlike the `@wrap` directive the `@render` directive renders the specified template at the current position passing in an optional model and view.data:
 
-pyRazor also uses a slightly different syntax for specifing parent templates similar to the jquery syntax.  In standard razor the LayoutPage variable is included in all views and is set in the template:
-
-    @{
-      LayoutPage = "../some/relative/path.cshtml";
-    }
-
-pyRazor provides the `@wrap` directive to achieve the same thing:
-
-    @wrap ../some/relative/path.pyr
-
-Importantly the template to wrap the current template in can be choosen dynamically by the view:
-
-    @if Model.something:
-      @wrap ../something.pyr
-    else:
-      @wrap ../else.pyr
-
-Wrap can be called anywhere in the template without performance penalty.  In the case where multiple wrap statements are encountered the last one wins.
-
-pyRazor also defines the `@render` directive to directly render another template inline into the current template.  This is sort of the opposite of wrap and analgous to the mvc directive `@RenderPartial`.  The `@render` directive renders the specified template at the current position passing in an optional model.  This is useful for reusable components that you can define in a template.
-
-    @render ../some/template
-    @render Model.childModel ../some/path/to.template
-    @render Model.childModel "../some/template with/spaces.template"
-
+    @render ../some/temp.late
+    @render ../some/temp.late model.someOtherModel
+    @render ../some/temp.late model.someOtherModel customViewData
+    @render "../some/template with/spaces.txt"
+    
 ### Text output
 All razor output that is printed is automagically html-escaped.  If for some reason this is not what you want add an ! immediately following the @ symbol to indicate that escaping should not be performed:
 
@@ -132,7 +141,7 @@ The @() syntax evaluates whatever single expression is in the () and prints it o
     @!("<p>Non-Escaped" + Model.space + "hhahahaha</p>")
 
 ### Helper Syntax
-MVC3 includes helpers which are basically functions declared in markup that output markup.  They effectively function as a mini template.  The syntax for helper in pyRazor is similar to mvc3:
+Razor defines helpers which are basically functions declared in markup that output markup.  They effectively function as a mini template.  The syntax for helper in pyRazor is similar to mvc3:
 
     @helper listrow(text):
       @:
@@ -149,14 +158,14 @@ This method could be called elsewhere in the DOM:
 
     <div id="container">
       @for p in products:
-        @listrow(p.text)
+        @view.helper.listrow(p.text)
     </div>
 
-Note: these helpers may only be accessed by the current template or any nested templates or wrapped templates.  Do not however declare a template in some parent template then expect a child that calls @wrap to be able to use it.
+Note: these helpers may only be accessed by the current template or wrapped templates.  Do not however declare a template in some parent template then expect a child that calls @wrap to be able to use it.
 
-### Strangeness with non-xml/html documents
+### Notes on overcoming strangeness with non-xml/html documents
 ----------------
-A typical c# razor template my look similar to the following. Notice how it takes advantage of the <p> tag to allow for the lines immediately following the if statement be parsed as c# code.
+A typical c# mvc3 razor template my look similar to the following. Notice how it takes advantage of the <p> tag to determine what is c# code and what should be interpreted as view code:
 
     @if (name == "alex") {
       name = "hi";
@@ -174,7 +183,7 @@ This approach works incredibly well for xml/html structured documents; however, 
       }
     }
 
-This will fail to parse due to the two lines after the if statement being interpreted as code instead of json output.  This case is handled in the mvc implementation by wrapping any content in a <text></text> tag.
+This will fail to parse due to the two lines after the if statement being interpreted as code instead of json output.  This case is handled in the mvc3 razor implementation by wrapping any non xml/html content in a <text></text> tag.
 
     {
       @if (name == "alex") {
@@ -185,30 +194,20 @@ This will fail to parse due to the two lines after the if statement being interp
       }
     }
 
-To generalize the templates pyRazor assumes all if/else/loop statements are a single line unless explicitly indicated using an optional multi-line syntax.  First the standard implementation using single line assumptions:
+To generalize razor templates, pyRazor assumes all if/else/loop statements are a single line and that anything at the appropriate indention level should be intepreted as view code.  This does not preclude multiline code blocks as shown below:
 
     @if name == "alex":
       "tag": "alex",
+    elif: name == "bob:
+        @:
+            name = "john"
+            l = len(name)
+        "tag": "@name",
+        "length": "@l",
     else:
+      "tag": "@name",
       name = "john"; *// will be printed out as view text*
       "tag": "not important",
-
-To handle the fairly common case of a single line of code after the for statement use the razor syntax:
-    
-    @if name == "alex":
-      @name *# this will print the name out*
-      <p>Something of note</p>
-
-To better handle the (much rarer) case of multi-line code we reuse the explicit multiline code syntax of razor
-
-    @if name == "alex":
-      @: 
-        name = "john";
-        t = "test";
-      "tag": "alex",
-      "blah": "@t",
-    else: 
-      "something": "else"
 
 ### Escaping the @ sign
 ---------------------
@@ -216,7 +215,9 @@ Ideally this thing should have some intelligence (i.e. mvc razor does a good job
 
 ### Rendering templates from code
 ---------------------
-When not compiled you must import the pyRazor library and call render:
+**A lot of this is not finalized**
+
+When not compiled you must import the pyRazor library and call compile or render.  Compile parses and compiles a template into a python function that can be rendered via the templates render method.  pyRazor.render compiles a template internally then renders it without returning the compiled model
 
     import pyRazor
 
@@ -232,11 +233,11 @@ When not compiled you must import the pyRazor library and call render:
     # Pass in a template inline (Not recommended)
     pyRazor.render("@Model", "The model is a string")
     
-    # Just build a view class from an inline template
-    # (Still not really recommended, but available)
-    pyRazor.build("@Model", "The model is a string")
+    # Just compile the template
+    pyRazor.compile("@Model", "The model is a string")
 
-In the case where a template is compiled, just import the template directly and call its render method minus the template path:
+Templates can also be compiled externally into python files.  Once this is done just import the template directly and call its render method minus the template path since it's not needed:
+
     import myTemplate
 
     myTemplate.render("My Model", debug=true)
@@ -256,7 +257,7 @@ Here is an example showing a few of the features off:
     @from datetime import datetime
     <html>
       <head>
-        <title>@Model.title</title>
+        <title>@model.title</title>
       </head>
       <body>
         @for p in products:
