@@ -20,6 +20,7 @@ http://www.evanfosmark.com/2009/02/sexy-lexing-with-python/
 ---------------------------
 Goals: Attempt to figure out the user's intentions and do our best to translate that to python code
 Non-Goals: Perform python syntax checking
+* (?:^|[\n])(\s*) - Matches indent level at the beginning of lines so we can keep track of indentation
 * .+?(?=@) - Matches any text upto the @ identifier, this is view text
 * @@ - Matches the @@ so it can be replaced with a literal @ in the code
 * ^@(\w*).*:$ - Handle @Somecode: This also matches @: multiline code designator

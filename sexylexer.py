@@ -5,7 +5,7 @@ import re
 
 class UnknownTokenError(Exception):
     """ This exception is for use to be thrown when an unknown token is
-        encountered in the token stream. It hols the line number and the
+        encountered in the token stream. It holds the line number and the
         offending token.
     """
     def __init__(self, token, lineno):
@@ -29,6 +29,7 @@ class _InputScanner(object):
         self._position = 0
         self.lexer = lexer
         self.input = input
+        self.regex_indent = re.compile("(?:^|[\n])(\s*)", re.MULTILINE);
  
     def __iter__(self):
         """ All of the code for iteration is controlled by the class itself.
@@ -58,18 +59,26 @@ class _InputScanner(object):
         """
         if self.done_scanning():
             return None
-        if self.lexer.omit_whitespace:
-            match = self.lexer.ws_regexc.match(self.input, self._position)
-            if match:
-                self._position = match.end()
+
+        # Determine the level of indentation at the beginning of the line
+        match = self.regex_indent.match(self.input, self._position)
+        indentLevel = 0
+        if match:
+          # Save the number of tabs/spaces
+          indentLevel = match.end() - self._position
+          self._position = match.end()
+
+        # Try to match a token
         match = self.lexer.regexc.match(self.input, self._position)
         if match is None:
             lineno = self.input[:self._position].count("\n") + 1
             raise UnknownTokenError(self.input[self._position], lineno)
         self._position = match.end()
         value = match.group(match.lastgroup)
+
+        # Callback
         if match.lastgroup in self.lexer._callbacks:
-            value = self.lexer._callbacks[match.lastgroup](self, value)
+            value = self.lexer._callbacks[match.lastgroup](self, value, indentLevel)
         return match.lastgroup, value
  
  
@@ -79,12 +88,11 @@ class Lexer(object):
         tokens one-by-one. It is meant to be used through iterating.
     """
  
-    def __init__(self, rules, case_sensitive=True, omit_whitespace=True):
+    def __init__(self, rules, case_sensitive=False):
         """ Set up the lexical scanner. Build and compile the regular expression
             and prepare the whitespace searcher.
         """
         self._callbacks = {}
-        self.omit_whitespace = omit_whitespace
         self.case_sensitive = case_sensitive
         parts = []
         for name, rule in rules:
@@ -97,7 +105,6 @@ class Lexer(object):
         else:
             flags = re.M|re.I
         self.regexc = re.compile("|".join(parts), flags)
-        self.ws_regexc = re.compile("\s*", re.MULTILINE)
  
     def scan(self, input):
         """ Return a scanner built for matching through the `input` field. 
