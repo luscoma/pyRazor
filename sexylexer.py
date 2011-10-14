@@ -29,7 +29,7 @@ class _InputScanner(object):
         self._position = 0
         self.lexer = lexer
         self.input = input
-        self.regex_indent = re.compile("(?:^|[\n])(\s*)", re.MULTILINE);
+        self.regex_nline = re.compile("[\r]?[\n](\s*)")
  
     def __iter__(self):
         """ All of the code for iteration is controlled by the class itself.
@@ -60,25 +60,25 @@ class _InputScanner(object):
         if self.done_scanning():
             return None
 
-        # Determine the level of indentation at the beginning of the line
-        match = self.regex_indent.match(self.input, self._position)
-        indentLevel = 0
-        if match:
-          # Save the number of tabs/spaces
-          indentLevel = match.end() - self._position
+        # Match \r and \n, determine indent, and move past them
+        match = self.regex_nline.match(self.input, self._position)
+        if match is not None:
+          # len(match.group(1)) holds the indent level
           self._position = match.end()
+          return "INDENT", len(match.group(1))
 
         # Try to match a token
         match = self.lexer.regexc.match(self.input, self._position)
         if match is None:
             lineno = self.input[:self._position].count("\n") + 1
             raise UnknownTokenError(self.input[self._position], lineno)
+
         self._position = match.end()
         value = match.group(match.lastgroup)
 
         # Callback
         if match.lastgroup in self.lexer._callbacks:
-            value = self.lexer._callbacks[match.lastgroup](self, value, indentLevel)
+            value = self.lexer._callbacks[match.lastgroup](self, value)
         return match.lastgroup, value
  
  
