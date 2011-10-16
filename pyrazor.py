@@ -35,13 +35,13 @@ rules = (
   (r"LINECOMMENT", r"@#.*"),
   (r"MULTILINE", r"@\w*.*:$"),
   (r"PAREN", (r"@!?\(", paren_expression)),
-  (r"EXPRESSION", r"@!?(\w+(?:(?:\[.+\])|(?:\(.*\)))?(?:\.[a-zA-Z]+(?:(?:\[.+\])|(?:\(.*\)))?)?)"),
+  (r"EXPRESSION", r"@!?(\w+(?:(?:\[.+\])|(?:\(.*\)))?(?:\.[a-zA-Z]+(?:(?:\[.+\])|(?:\(.*\)))?)*)"),
   (r"TEXT", r"[^@\n]+")
 )
 
 # Debug stuff
 l = sexylexer.Lexer(rules)
 def doScan(text):
-  for token in text:
+  for token in l.scan(text):
     print token
   
