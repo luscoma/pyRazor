@@ -33,6 +33,7 @@ rules = (
   (r"ESCAPED", r"@@"),
   (r"COMMENT", r"@#.*#@"),
   (r"LINECOMMENT", r"@#.*"),
+  (r"ONELINE", r"@(?:import|from|model) .+$"),
   (r"MULTILINE", r"@\w*.*:$"),
   (r"PAREN", (r"@!?\(", paren_expression)),
   (r"EXPRESSION", r"@!?(\w+(?:(?:\[.+\])|(?:\(.*\)))?(?:\.[a-zA-Z]+(?:(?:\[.+\])|(?:\(.*\)))?)*)"),
