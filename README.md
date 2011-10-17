@@ -88,7 +88,7 @@ Wrapped templates are implemented similar to the jQuery wrap method and very use
 
 When using `@wrap` the currently executing template specifies its parent template to render itself within.  That is to say the current template is rendered, then the specified parent template is rendered and the child template is put into the parent.  The syntax for `@wrap` is fairly straight forward:
 
-    @wrap ../some/relative/path.pyr
+    @wrap("../some/relative/path.pyr")
 
 Importantly the template to wrap the current template in can be choosen dynamically by the view and can be declared at any place in the child template.  In the case where multiple wrap statements are encountered the last one wins.
 
