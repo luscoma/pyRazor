@@ -9,22 +9,23 @@ PAREN_MATCH = re.compile(r"[()\n]", re.MULTILINE)
 def paren_expression(scanner, token):
   """Performs paren matching to find the end of a parenthesis expression"""
   start = scanner._position
-  match = PAREN_MATCH.search(scanner.input, start)
   plevel = 1
-  end = 0
-  while match is not None:
-    if match.group() == "(":
+  end = start
+  for c in scanner.input[start:]:
+    if plevel == 0:
+      # Halt when we close our braces
+      break;
+    elif c == '(':
       plevel += 1
-    elif match.group() == ")":
+    elif c == ')':
       plevel -= 1
-    else:
-      # halt at new line
+    elif c == '\n':
+      # Halt at new line
       break
-    end = match.end()
-    match = PAREN_MATCH.search(scanner.input, end+1)
+    end += 1
   # parse exception
   if plevel != 0:
-    print "parse exception"
+    raise sexylexer.InvalidTokenError()
   scanner._position = end
   return scanner.input[start-2:end]
 

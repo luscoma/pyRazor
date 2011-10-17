@@ -3,18 +3,35 @@
 
 import re
 
-class UnknownTokenError(Exception):
+class TokenError(Exception):
+    """A base exception for use in desginated that an error ocurred
+       when parsing.
+    """
+    def __init__(self, token, lineno):
+      self.token = token
+      self.lineno = lineno
+
+    def __str__(self):
+        return "Line #%s, Found token: %s" % (self.lineno, self.token)
+
+class InvalidTokenError(TokenError):
+    """This exception is for use by parsing functions to designate an
+       error has occurred when parsing out a token.  When thrown within
+       a parsing function it will be caught by the parser and rethrown
+       with lineno and the matched portion of the token.
+    """
+    def __init__(self, token = None, lineno = None):
+      """A constructor that can be used by callbacks to signify an
+         error.  This will be caught and reraised with position and
+         line number information"""
+      TokenError.__init__(self, token, lineno)
+
+class UnknownTokenError(TokenError):
     """ This exception is for use to be thrown when an unknown token is
         encountered in the token stream. It holds the line number and the
         offending token.
     """
-    def __init__(self, token, lineno):
-        self.token = token
-        self.lineno = lineno
- 
-    def __str__(self):
-        return "Line #%s, Found token: %s" % (self.lineno, self.token)
- 
+    pass
  
 class _InputScanner(object):
     """ This class manages the scanning of a specific input. An instance of it is
@@ -78,7 +95,12 @@ class _InputScanner(object):
 
         # Callback
         if match.lastgroup in self.lexer._callbacks:
-            value = self.lexer._callbacks[match.lastgroup](self, value)
+            try:
+                value = self.lexer._callbacks[match.lastgroup](self, value)
+            except InvalidTokenError:
+                # raise with some actual information
+                lineno = self.input[:self._position].count("\n") + 1
+                raise InvalidTokenError(self.input[self._position], lineno)
         return match.lastgroup, value
  
  
