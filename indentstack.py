@@ -13,6 +13,9 @@ class IndentStack(object):
       if self.handlers.has_key(scope):
         self.handlers.pop(scope)()
     self.stack.append(level)
+
+  def getIndent(self):
+    return self.stack[-1]
   
   def registerScopeListener(self, listener):
     """Registers a scope listener that will be called back when this scope is exited.

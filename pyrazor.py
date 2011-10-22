@@ -30,7 +30,7 @@ def paren_expression(scanner, token):
   if plevel != 0:
     raise sexylexer.InvalidTokenError()
   scanner._position = end
-  template += "print " + scanner.input[start:end-1]
+  print_line("print '" + scanner.input[start:end-1] + "'")
   return scanner.input[start-2:end]
 
 def multiline(scanner, token):
@@ -43,36 +43,45 @@ def multiline(scanner, token):
     indenter.registerScopeListener(pop_multiline)
     #TODO(alusco): Handle this case
   else:
-    template += token[1:]
+    print_line(token[1:])
   return token
 
 def escaped(scanner, token):
   global template
   """Escapes the @ token directly"""
-  template += "\nprint '@'"
+  print_line("print '@'")
   return "@"
 
 def expression(scanner, token):
   global template
-  template += "print " + token[1:]
+  print_line("print " + token[1:])
+  return token
 
 def oneline(scanner, token):
   global template
   buzzword = token[:token.index(' ')]
   if buzzword == "model":
-    template += "# MODEL"
+    print_line("print '# Model'")
   else:
-    template += token[1:]
+    # Other One Line
+    print_line(token[1:])
+  return token
 
 def text(scanner, token):
   global template
-  template += "print '" + token + "'"
+  print_line("print '" + token.replace("'","\\'") + "'")
+  return token
 
 def indent_handler(level):
   global template
-  template += "\n"
-  template += " " * level
   indenter.handler(level)
+
+def print_line(text):
+  global indenter
+  global template
+  template += " " * indenter.getIndent()
+  template += text
+  template += "\n"
 
 # Parsing rules
 rules = (
@@ -97,9 +106,3 @@ def render(text):
   for token in l.scan(text):
     pass
   print template
-
-# Debug stuff
-def doScan(text):
-  for token in l.scan(text):
-    print token
-  
