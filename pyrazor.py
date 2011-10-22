@@ -30,7 +30,6 @@ def paren_expression(scanner, token):
   if plevel != 0:
     raise sexylexer.InvalidTokenError()
   scanner._position = end
-  print_line("print '" + scanner.input[start:end-1] + "'")
   return scanner.input[start-2:end]
 
 def multiline(scanner, token):
@@ -42,9 +41,9 @@ def multiline(scanner, token):
       scanner.ignoreRules = False
     indenter.registerScopeListener(pop_multiline)
     #TODO(alusco): Handle this case
+    return None
   else:
-    print_line(token[1:])
-  return token
+    return token[1:]
 
 def escaped(scanner, token):
   global template
@@ -53,35 +52,29 @@ def escaped(scanner, token):
   return "@"
 
 def expression(scanner, token):
-  global template
-  print_line("print " + token[1:])
-  return token
+  return token[1:]
 
 def oneline(scanner, token):
-  global template
   buzzword = token[:token.index(' ')]
   if buzzword == "model":
-    print_line("print '# Model'")
+    return "IDK"
   else:
-    # Other One Line
-    print_line(token[1:])
+    return token[1:]
   return token
 
 def text(scanner, token):
-  global template
-  print_line("print '" + token.replace("'","\\'") + "'")
-  return token
+  return token.replace("'","\\'")
 
 def indent_handler(level):
   global template
   indenter.handler(level)
 
-def print_line(text):
+def print_line(template, text):
   global indenter
-  global template
   template += " " * indenter.getIndent()
   template += text
   template += "\n"
+  return template
 
 # Parsing rules
 rules = (
@@ -95,14 +88,23 @@ rules = (
   (r"TEXT", (r"[^@\n]+", text))
 )
 
-class View(object):
-  """A base razor view class.  All razor templates inherit from this class"""
-  pass
-
 def render(text):
   global template;
   template = ""
   l = sexylexer.Lexer(rules,indent_handler)
   for token in l.scan(text):
-    pass
+    # hacky hacky hacky
+    if token[0] == "LINE":
+      template = print_line(template, token[1])
+    elif token[0] == "MULTILINE" and token[1] is not None:
+      template = print_line(template, token[1])
+    elif token[0] == "TEXT":
+      template = print_line(template, "print '" + token[1] + "'")
+    elif token[0] == "PAREN":
+      template = print_line(template, "print " + token[1])
+    elif token[0] == "ESCAPED":
+      template = print_line(template, "print '" + token[1] + "'")
+    elif token[0] == "EXPRESSION":
+      template = print_line(template, "print " + token[1])
+
   print template
