@@ -35,11 +35,10 @@ class RazorLexer(object):
         (Token.EXPRESSION, (r"@!?(\w+(?:(?:\[.+\])|(?:\(.*\)))?(?:\.[a-zA-Z]+(?:(?:\[.+\])|(?:\(.*\)))?)*)", bind(lex.expression))),
         (Token.TEXT, (r"[^@\n]+", bind(lex.text)))
     )
-    lex.lexer = sexylexer.Lexer(lex.rules, lambda level: lex.indent_handler(level))
+    lex.lexer = sexylexer.Lexer(lex.rules, lambda level: lex.scope.handler(level))
     return lex
 
   def __init__(self):
-    # Track Indention
     self.scope = ScopeStack()
 
   def scan(self, text):
@@ -53,7 +52,6 @@ class RazorLexer(object):
   # Token Parsers
   def shouldEscape(self, token):
     """Returns false if this token should not be html escaped"""
-    print token
     return token[1] != '!':
 
   def paren_expression(self, scanner, token):
@@ -110,12 +108,9 @@ class RazorLexer(object):
     buzzword = token[:token.index(' ')]
     if buzzword == "model":
       # TODO(alusco): implement model stuff
-      return "IDK"
+      raise NotImplementedError, "TODO on this one"
     else:
       return token[1:]
 
   def text(self, scanner, token):
     return token.replace("'","\\'")
-
-  def indent_handler(self, level):
-    self.scope.handler(level)
