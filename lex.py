@@ -1,6 +1,6 @@
 # Alex Lusco
 import sexylexer
-from indentstack import IndentStack
+from scopestack import ScopeStack
 
 class Token:
   """Simple list of token names"""
@@ -39,15 +39,15 @@ class RazorLexer(object):
 
   def __init__(self):
     # Track Indention
-    self.indenter = IndentStack()
+    self.scope = ScopeStack()
 
   def scan(self, text):
     """Tokenize an input string"""
     return self.lexer.scan(text)
 
-  def getIndent(self):
+  def getScope(self):
     """Returns the current indention level"""
-    return self.indenter.getIndent()
+    return self.scope.getScope()
 
   # Token Parsers
   def paren_expression(self, scanner, token):
@@ -80,12 +80,13 @@ class RazorLexer(object):
       #sketchy situation here.
       scanner.ignoreRules = True
       def pop_multiline():
-        print "poped"
+        print "Popped"
         scanner.ignoreRules = False
-      self.indenter.registerScopeListener(pop_multiline)
       #TODO(alusco): Handle this case
+      self.scope.pushCallback(pop_multiline)
       return None
     else:
+      self.scope.pushScope()
       return token[1:]
 
   def escaped(self, scanner, token):
@@ -107,5 +108,4 @@ class RazorLexer(object):
     return token.replace("'","\\'")
 
   def indent_handler(self, level):
-    print "Indented!"
-    self.indenter.handler(level)
+    self.scope.handler(level)

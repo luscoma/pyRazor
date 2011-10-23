@@ -8,25 +8,25 @@ class View(object):
   def __init__(self):
     self.lines = []
 
-  def _outputLine(self, indent, text):
-    line = " " * indent
+  def _outputLine(self, scope, text):
+    line = " " * scope
     line += text
     self.lines.append(line)
 
-  def parseToken(self, indent, token):
+  def parseToken(self, scope, token):
     """Internal function used to add a token to the view"""
     if token[0] == Token.LINE:
-      template = self._outputLine(indent-2, token[1])
+      template = self._outputLine(scope-2, token[1])
     elif token[0] == Token.MULTILINE and token[1] is not None:
-      template = self._outputLine(indent, token[1])
+      template = self._outputLine(scope, token[1])
     elif token[0] == Token.TEXT:
-      template = self._outputLine(indent, "print '" + token[1] + "'")
+      template = self._outputLine(scope, "print '" + token[1] + "'")
     elif token[0] == Token.PARENEXPRESSION:
-      template = self._outputLine(indent, "print " + token[1])
+      template = self._outputLine(scope, "print " + token[1])
     elif token[0] == Token.ESCAPED:
-      template = self._outputLine(indent, "print '" + token[1] + "'")
+      template = self._outputLine(scope, "print '" + token[1] + "'")
     elif token[0] == Token.EXPRESSION:
-      template = self._outputLine(indent, "print " + token[1])
+      template = self._outputLine(scope, "print " + token[1])
 
   def build(self, debug = False):
     if debug:

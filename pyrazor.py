@@ -10,6 +10,6 @@ def render(text, debug=False):
   for token in lex.scan(text):
     if debug:
       print token
-    view.parseToken(lex.getIndent(), token)
-  view.build(debug=True)
+    view.parseToken(lex.getScope(), token)
+  view.build(debug=debug)
   view.render()
