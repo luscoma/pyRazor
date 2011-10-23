@@ -12,4 +12,4 @@ def render(text, debug=False):
       print token
     view.parseToken(lex.getScope(), token)
   view.build(debug=debug)
-  view.render()
+  return view.render()

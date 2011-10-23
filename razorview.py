@@ -8,6 +8,8 @@ class View(object):
   """A razor view"""
   def __init__(self):
     self.parser = ViewBuilder()
+    # TODO(alusco): Make this settable
+    self.keepNewLines = True
 
   def parseToken(self, scope, token):
     """Internal function used to add a token to the view"""
@@ -41,30 +43,24 @@ class View(object):
 
   def render(self, model=None):
     self.model = model
-    self._render(model)
+    return self._render(model)
 
 class ViewBuilder(object):
   def __init__(self):
     self.buffer = StringIO()
     self.cache = None
-    self.lineHasText = False
+    # TODO(alusco): This should be configurable
+    self.stripWhitespace = False
+
     self._writeHeader()
-    self.handleNewLine(0)
+    self._writeScope(0)
 
   def _writeHeader(self):
     """Writes the function header"""
     # The last line here must not have a trailing \n
     self.buffer.write("def template(self, model=None):\n")
-    self.buffer.write("  view = self")
-
-  def _writeLineLeader(self):
-    """Might write the concat symbol depending on state"""
-    if self.lineHasText:
-      self.buffer.write(" + ")
-    else:
-      self.lineHasText = True
-      # TODO(alusco): Graduate from using print
-      self.buffer.write("print ")
+    self.buffer.write("  view = self\n")
+    self.buffer.write("  __io = StringIO()")
 
   def writeCode(self, code):
     """Writes a line of code to the view buffer"""
@@ -72,27 +68,37 @@ class ViewBuilder(object):
 
   def writeText(self, token):
     """Writes a token to the view buffer"""
-    self._writeLineLeader()
-    self.buffer.write("'")
+    self.buffer.write("__io.write('")
     self.buffer.write(token)
-    self.buffer.write("'")
+    self.buffer.write("')")
 
   def writeExpression(self, expression):
     """Writes an expression to the current line"""
-    self._writeLineLeader()
-    self.buffer.write("str(")
+    self.buffer.write("__io.write(")
     self.buffer.write(expression)
     self.buffer.write(")")
-
-  def handleNewLine(self, scope):
-    """Handles a new line"""
-    self.buffer.write("\n  ")
-    self.buffer.write(" " * scope)
-    self.lineHasText = False
 
   def getTemplate(self):
     """Retrieves the templates text"""
     if not self.cache:
+      self.close()
+    return self.cache
+
+  def _writeScope(self, scope):
+    self.buffer.write("\n  ")
+    self.buffer.write(" " * scope)
+
+  def handleNewLine(self, scope):
+    """Handles a new line"""
+    if not self.stripWhitespace:
+      self._writeScope(scope)
+      self.buffer.write("__io.write('\\n')")
+    self._writeScope(scope)
+
+  def close(self):
+    if not self.cache:
+      self.buffer.write("\n  __out = __io.getvalue()\n")
+      self.buffer.write("  __io.close()\n")
+      self.buffer.write("  return __out")
       self.cache = self.buffer.getvalue()
       self.buffer.close()
-    return self.cache
