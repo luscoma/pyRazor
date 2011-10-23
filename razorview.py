@@ -53,6 +53,7 @@ class ViewBuilder(object):
 
   def _writeHeader(self):
     """Writes the function header"""
+    # The last line here must not have a trailing \n
     self.buffer.write("def template(self, model=None):\n")
     self.buffer.write("  view = self")
 
@@ -90,6 +91,7 @@ class ViewBuilder(object):
     self.lineHasText = False
 
   def getTemplate(self):
+    """Retrieves the templates text"""
     if not self.cache:
       self.cache = self.buffer.getvalue()
       self.buffer.close()
