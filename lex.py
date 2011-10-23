@@ -14,6 +14,7 @@ class Token:
   EXPRESSION = "EXPRESSION"
   TEXT = "TEXT"
   LINE = "LINE"
+  INDENT = "INDENT"
 
 def bind(handler):
   """Simple binding function"""
@@ -52,7 +53,7 @@ class RazorLexer(object):
   # Token Parsers
   def shouldEscape(self, token):
     """Returns false if this token should not be html escaped"""
-    return token[1] != '!':
+    return token[1] != '!'
 
   def paren_expression(self, scanner, token):
     """Performs paren matching to find the end of a parenthesis expression"""
@@ -79,7 +80,7 @@ class RazorLexer(object):
     # Our token here is either @!( or @(
     if not self.shouldEscape(token):
       return scanner.input[start:end-1]
-    return cgi.escape(scanner.input[start:end-1)
+    return cgi.escape(scanner.input[start:end-1])
 
   def multiline(self, scanner, token):
     """Handles multiline expressions"""
