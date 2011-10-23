@@ -34,16 +34,19 @@ class RazorLexer(object):
         (Token.EXPRESSION, (r"@!?(\w+(?:(?:\[.+\])|(?:\(.*\)))?(?:\.[a-zA-Z]+(?:(?:\[.+\])|(?:\(.*\)))?)*)", bind(lex.expression))),
         (Token.TEXT, (r"[^@\n]+", bind(lex.text)))
     )
-    lex.lexer = sexylexer.Lexer(lex.rules, lambda level: lex.indent_handler)
+    lex.lexer = sexylexer.Lexer(lex.rules, lambda level: lex.indent_handler(level))
     return lex
 
-  # Indention Level
-  indenter = IndentStack()
+  def __init__(self):
+    # Track Indention
+    self.indenter = IndentStack()
 
   def scan(self, text):
+    """Tokenize an input string"""
     return self.lexer.scan(text)
 
   def getIndent(self):
+    """Returns the current indention level"""
     return self.indenter.getIndent()
 
   # Token Parsers
@@ -68,7 +71,7 @@ class RazorLexer(object):
     if plevel != 0:
       raise sexylexer.InvalidTokenError()
     scanner._position = end
-    return scanner.input[start-2:end]
+    return scanner.input[start:end-1]
 
   def multiline(self, scanner, token):
     """Handles multiline expressions"""
@@ -77,6 +80,7 @@ class RazorLexer(object):
       #sketchy situation here.
       scanner.ignoreRules = True
       def pop_multiline():
+        print "poped"
         scanner.ignoreRules = False
       self.indenter.registerScopeListener(pop_multiline)
       #TODO(alusco): Handle this case
@@ -103,4 +107,5 @@ class RazorLexer(object):
     return token.replace("'","\\'")
 
   def indent_handler(self, level):
+    print "Indented!"
     self.indenter.handler(level)
