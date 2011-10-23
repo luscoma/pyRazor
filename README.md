@@ -31,12 +31,9 @@ If no model is specified via a `@model` directive any object can be passed into 
 ----------------------------------
 The view object is an instance of RazorView and is available to all views at render time.  This object holds any relevant view objects and serves as a way to extends the razor system in the future.  Currently view has the model, data, and helper attributes (view.data and view.helpers are explained in further down).
 
-### @view.data
+### Razor ViewBag
 ----------------------------------
-In razor each view also has a ViewBag which is effectively a dictionary of key/values that are passed into the view at runtime.  All views have this and it is never null.  Since I've never liked the name ViewBag we provide access to this lookup class via the `view.data` variable.  This objects is an instance of `ViewData` and can have any property set before the view is rendered.  This property is a good way to pass one-off flags and values that are not necessarily part of the view model.  When properties are accessed that don't exist the class is setup to return None.
-
-    @if view.data.errors == None:
-        <p>Do things</p>
+In mvc3 razor each view also has a ViewBag which is effectively a dictionary of key/values that are passed into the view at runtime.  In a statically typed language this is a great way to provide one off properties out-of-band from the model.  In python the model class is dynamic so we don't provide a view.data field (though there's nothing preventing a user from setting a data field and referencing it themselves). The user is encouraged to attach all properties to the model.
 
 ### @import and @from
 -----------------------------------

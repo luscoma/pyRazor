@@ -33,7 +33,9 @@ class View(object):
       print self.lines
 
     # Build our code and indent it one
-    code = "def template(self):\n"
+    code = """
+def template(self, model=None):
+  view = self"""
     code += "\t" + "\n\t".join(self.lines)
 
     # Compile this code
@@ -43,4 +45,8 @@ class View(object):
     exec(block)
 
     # Set the render function to this instance
-    self.render = MethodType(template, self)
+    self._render = MethodType(template, self)
+
+  def render(self, model=None):
+    self.model = model
+    self._render(model)

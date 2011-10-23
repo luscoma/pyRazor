@@ -1,5 +1,6 @@
 # Alex Lusco
 import sexylexer
+import cgi
 from scopestack import ScopeStack
 
 class Token:
@@ -50,6 +51,11 @@ class RazorLexer(object):
     return self.scope.getScope()
 
   # Token Parsers
+  def shouldEscape(self, token):
+    """Returns false if this token should not be html escaped"""
+    print token
+    return token[1] != '!':
+
   def paren_expression(self, scanner, token):
     """Performs paren matching to find the end of a parenthesis expression"""
     start = scanner._position
@@ -71,7 +77,11 @@ class RazorLexer(object):
     if plevel != 0:
       raise sexylexer.InvalidTokenError()
     scanner._position = end
-    return scanner.input[start:end-1]
+
+    # Our token here is either @!( or @(
+    if not self.shouldEscape(token):
+      return scanner.input[start:end-1]
+    return cgi.escape(scanner.input[start:end-1)
 
   def multiline(self, scanner, token):
     """Handles multiline expressions"""
@@ -80,9 +90,7 @@ class RazorLexer(object):
       #sketchy situation here.
       scanner.ignoreRules = True
       def pop_multiline():
-        print "Popped"
         scanner.ignoreRules = False
-      #TODO(alusco): Handle this case
       self.scope.pushCallback(pop_multiline)
       return None
     else:
@@ -94,7 +102,9 @@ class RazorLexer(object):
     return "@"
 
   def expression(self, scanner, token):
-    return token[1:]
+    if not self.shouldEscape(token):
+      return token[1:]
+    return cgi.escape(token[1:])
 
   def oneline(self, scanner, token):
     buzzword = token[:token.index(' ')]
