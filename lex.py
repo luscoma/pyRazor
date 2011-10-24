@@ -13,8 +13,9 @@ class Token:
   PARENEXPRESSION = "PARENEXPRESSION"
   EXPRESSION = "EXPRESSION"
   TEXT = "TEXT"
-  LINE = "LINE"
+  CODE = "CODE"
   INDENT = "INDENT"
+  NEWLINE = "NEWLINE"
 
 def bind(handler):
   """Simple binding function"""
@@ -34,9 +35,11 @@ class RazorLexer(object):
         (Token.MULTILINE, (r"@\w*.*:$", bind(lex.multiline))),
         (Token.PARENEXPRESSION, (r"@!?\(", bind(lex.paren_expression))),
         (Token.EXPRESSION, (r"@!?(\w+(?:(?:\[.+\])|(?:\(.*\)))?(?:\.[a-zA-Z]+(?:(?:\[.+\])|(?:\(.*\)))?)*)", bind(lex.expression))),
-        (Token.TEXT, (r"[^@\n]+", bind(lex.text)))
+        (Token.TEXT, (r"[^@\r\n]+", bind(lex.text))),
+        (Token.NEWLINE, r"[\r]?[\n]"),
+        (Token.INDENT, (r"^\s+", bind(lex.indent))),
     )
-    lex.lexer = sexylexer.Lexer(lex.rules, lambda level: lex.scope.handler(level))
+    lex.lexer = sexylexer.Lexer(lex.rules)
     return lex
 
   def __init__(self):
@@ -47,7 +50,7 @@ class RazorLexer(object):
     return self.lexer.scan(text)
 
   def getScope(self):
-    """Returns the current indention level"""
+    """Returns the current scope level"""
     return self.scope.getScope()
 
   # Token Parsers
@@ -91,6 +94,9 @@ class RazorLexer(object):
       def pop_multiline():
         scanner.ignoreRules = False
       self.scope.pushCallback(pop_multiline)
+      # We have to move past the end of line (this is a special case)
+      # $ matches at the end of a line so it should be just +1
+      scanner._position += 1
       return None
     else:
       self.scope.pushScope()
@@ -113,4 +119,10 @@ class RazorLexer(object):
       return token[1:]
 
   def text(self, scanner, token):
+    """Returns text escaped with ' escaped"""
     return token.replace("'","\\'")
+
+  def indent(self, scanner, token):
+    """Handles indention scope"""
+    self.scope.handler(len(token))
+    return token

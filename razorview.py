@@ -13,7 +13,7 @@ class View(object):
 
   def parseToken(self, scope, token):
     """Internal function used to add a token to the view"""
-    if token[0] == Token.LINE:
+    if token[0] == Token.CODE:
       self.parser.writeCode(token[1])
     elif token[0] == Token.MULTILINE:
       if token[1] is None:
@@ -31,7 +31,9 @@ class View(object):
       self.parser.writeText(token[1])
     elif token[0] == Token.EXPRESSION:
       self.parser.writeExpression(token[1])
-    elif token[0]== Token.INDENT:
+    elif token[0] == Token.INDENT:
+      self.parser.writeText(token[1])
+    elif token[0]== Token.NEWLINE:
       self.parser.handleNewLine(scope)
 
   def build(self, debug = False):

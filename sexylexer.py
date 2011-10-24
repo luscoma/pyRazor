@@ -46,7 +46,6 @@ class _InputScanner(object):
     self._position = 0
     self.lexer = lexer
     self.input = input
-    self.regex_nline = re.compile("[\r]?[\n](\s*)")
     self.ignoreRules = False
     self.regex_line = re.compile(".+$", re.MULTILINE)
 
@@ -61,6 +60,7 @@ class _InputScanner(object):
     """ Used for iteration. It returns token after token until there
         are no more tokens. (change this to __next__(self) if using Py3.0)
     """
+    # TODO(alusco): Make this move passed None values
     if not self.done_scanning():
       return self.scan_next()
     raise StopIteration
@@ -71,11 +71,6 @@ class _InputScanner(object):
     """
     return self._position >= len(self.input)
 
-  def indent_handler(self, level):
-    if self.lexer.indent_handler is not None:
-      self.lexer.indent_handler(level)
-    return "INDENT", level
-
   def scan_next(self):
     """ Retreive the next token from the input. If the
         flag `omit_whitespace` is set to True, then it will
@@ -84,18 +79,11 @@ class _InputScanner(object):
     if self.done_scanning():
         return None
 
-    # Match \r and \n, determine indent, and move past them
-    match = self.regex_nline.match(self.input, self._position)
-    if match is not None:
-      # len(match.group(1)) holds the indent level
-      self._position = match.end()
-      return self.indent_handler(len(match.group(1).replace("\t","  ")))
-
     # If ignore rules
     if self.ignoreRules:
       match = self.regex_line.match(self.input, self._position)
       self._position = match.end()
-      return "LINE", match.group()
+      return "CODE", match.group().lstrip(' \t')
 
     # Try to match a token
     match = self.lexer.regexc.match(self.input, self._position)
@@ -122,7 +110,7 @@ class Lexer(object):
       tokens one-by-one. It is meant to be used through iterating.
   """
 
-  def __init__(self, rules, indent_handler=None, case_sensitive=False):
+  def __init__(self, rules, case_sensitive=False):
     """ Set up the lexical scanner. Build and compile the regular expression
         and prepare the whitespace searcher.
     """
@@ -133,13 +121,12 @@ class Lexer(object):
       if not isinstance(rule, str):
         rule, callback = rule
         self._callbacks[name] = callback
-        parts.append("(?P<%s>%s)" % (name, rule))
-      if self.case_sensitive:
-        flags = re.M
-      else:
-        flags = re.M|re.I
+      parts.append("(?P<%s>%s)" % (name, rule))
+    if self.case_sensitive:
+      flags = re.M
+    else:
+      flags = re.M|re.I
 
-    self.indent_handler = indent_handler
     self.regexc = re.compile("|".join(parts), flags)
 
   def scan(self, input):

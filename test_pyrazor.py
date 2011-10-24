@@ -41,6 +41,17 @@ class RenderTests(unittest.TestCase):
     m['test'] = 3
     self.assertEquals("3", pyrazor.render("@model dict\n@model['test']", m))
 
+  def testHtml(self):
+    html = """<html>
+  <head>
+    <title>Alex</title>
+  </head>
+  <body>
+    <span>Alex</span>
+  </body>
+</html>"""
+    self.assertEquals(html, pyrazor.render(html))
+
 if __name__ == '__main__':
       unittest.main()
 
