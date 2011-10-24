@@ -15,8 +15,12 @@ class View(object):
     """Internal function used to add a token to the view"""
     if token[0] == Token.LINE:
       self.parser.writeCode(token[1])
-    elif token[0] == Token.MULTILINE and token[1] is not None:
-      self.parser.writeCode(token[1])
+    elif token[0] == Token.MULTILINE:
+      if token[1] is None:
+        # This token is more like a flag, nothing is output
+        self.parser.skip_new_line = True
+      else:
+        self.parser.writeCode(token[1])
     elif token[0] == Token.TEXT:
       self.parser.writeText(token[1])
     elif token[0] == Token.PARENEXPRESSION:
@@ -45,38 +49,66 @@ class View(object):
     self.model = model
     return self._render(model)
 
+class ViewIO(StringIO):
+  """Subclass of StringIO which can write a line"""
+
+  def __init__(self):
+    StringIO.__init__(self)
+    self.scope = 0
+
+  def setscope(self, scope):
+    self.scope = scope
+
+  def __writescope(self):
+    self.write("  " * self.scope)
+
+  def writescope(self, text):
+    """Writes the text prepending the scope"""
+    self.__writescope()
+    self.write(text)
+
+  def scopeline(self, text):
+    """Writes a line of text prepending the scope"""
+    self.__writescope()
+    self.writeline(text)
+
+  def writeline(self, text):
+    """Writes the text followed by a \n if needed"""
+    self.write(text)
+    if text[-1] != '\n':
+      self.write('\n')
+
 class ViewBuilder(object):
   def __init__(self):
-    self.buffer = StringIO()
+    self.buffer = ViewIO()
     self.cache = None
-    # TODO(alusco): This should be configurable
-    self.stripWhitespace = False
-
+    self.skip_new_line = False
+    self.buffer.setscope(1)
     self._writeHeader()
-    self._writeScope(0)
 
   def _writeHeader(self):
     """Writes the function header"""
     # The last line here must not have a trailing \n
-    self.buffer.write("def template(self, model=None):\n")
-    self.buffer.write("  view = self\n")
-    self.buffer.write("  __io = StringIO()")
+    self.buffer.writeline("def template(self, model=None):")
+    self.buffer.scopeline("view = self")
+    self.buffer.scopeline("__io = StringIO()")
 
   def writeCode(self, code):
     """Writes a line of code to the view buffer"""
-    self.buffer.write(code)
+    self.buffer.scopeline(code)
+    self.skip_new_line = True
 
   def writeText(self, token):
     """Writes a token to the view buffer"""
-    self.buffer.write("__io.write('")
+    self.buffer.writescope("__io.write('")
     self.buffer.write(token)
-    self.buffer.write("')")
+    self.buffer.writeline("')")
 
   def writeExpression(self, expression):
     """Writes an expression to the current line"""
-    self.buffer.write("__io.write(")
+    self.buffer.writescope("__io.write(")
     self.buffer.write(expression)
-    self.buffer.write(")")
+    self.buffer.writeline(")")
 
   def getTemplate(self):
     """Retrieves the templates text"""
@@ -84,21 +116,19 @@ class ViewBuilder(object):
       self.close()
     return self.cache
 
-  def _writeScope(self, scope):
-    self.buffer.write("\n  ")
-    self.buffer.write(" " * scope)
-
   def handleNewLine(self, scope):
     """Handles a new line"""
-    if not self.stripWhitespace:
-      self._writeScope(scope)
-      self.buffer.write("__io.write('\\n')")
-    self._writeScope(scope)
+    if not self.skip_new_line:
+      self.buffer.scopeline("__io.write('\\n')")
+    else:
+      self.skip_new_line = False
+    # Sets the scope (our minimum scope is 1)
+    self.buffer.setscope(scope+1)
 
   def close(self):
     if not self.cache:
-      self.buffer.write("\n  __out = __io.getvalue()\n")
-      self.buffer.write("  __io.close()\n")
-      self.buffer.write("  return __out")
+      self.buffer.scopeline("__out = __io.getvalue()")
+      self.buffer.scopeline("__io.close()")
+      self.buffer.scopeline("return __out")
       self.cache = self.buffer.getvalue()
       self.buffer.close()
