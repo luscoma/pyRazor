@@ -29,6 +29,18 @@ class RenderTests(unittest.TestCase):
     self.assertEquals("3 5", pyrazor.render("@model.a @model.b", model))
     self.assertEquals("8", pyrazor.render("@(model.a + model.b)", model))
 
+  def testModelInstaceOf(self):
+    m = dict()
+    m['test'] = 3
+    self.assertEquals("3", pyrazor.render("@model dict\n@model['test']", m))
+
+  def testModelSubclassOf(self):
+    class subdict(dict):
+      pass
+    m = subdict()
+    m['test'] = 3
+    self.assertEquals("3", pyrazor.render("@model dict\n@model['test']", m))
+
 if __name__ == '__main__':
       unittest.main()
 

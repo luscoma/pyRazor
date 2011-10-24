@@ -106,10 +106,9 @@ class RazorLexer(object):
     return cgi.escape(token[1:])
 
   def oneline(self, scanner, token):
-    buzzword = token[:token.index(' ')]
-    if buzzword == "model":
-      # TODO(alusco): implement model stuff
-      raise NotImplementedError, "TODO on this one"
+    lower_token = token.lower()
+    if lower_token.startswith("@model"):
+      return "isinstance(model, " + token[token.rindex(' '):] + ")"
     else:
       return token[1:]
 

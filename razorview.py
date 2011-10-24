@@ -21,6 +21,8 @@ class View(object):
         self.parser.skip_new_line = True
       else:
         self.parser.writeCode(token[1])
+    elif token[0] == Token.ONELINE:
+      self.parser.writeCode(token[1])
     elif token[0] == Token.TEXT:
       self.parser.writeText(token[1])
     elif token[0] == Token.PARENEXPRESSION:

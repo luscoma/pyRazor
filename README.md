@@ -19,13 +19,7 @@ In python static type checking is not an issue but we still support the model di
 
 By specifing this directive a model must be passed in and it must be an instance of the given type.  This is checked via a call to isinstance.  If the model fails this check the template will fail to render and throw an exception.
 
-In some cases it may be beneficial to allow all subclasses of the specified type, in that case a variation of the model syntax is allowed:
-
-    @model extends SomeClass
-
-This basically wraps the template with a call to issubclass instead of isinstance providing the same functionality.  
-
-If no model is specified via a `@model` directive any object can be passed into the view as it's model.  This also doesn't prevent None from being the view model.
+If no model is specified via a `@model` directive any object can be passed into the view as it's model including the default of None.
 
 ### @view
 ----------------------------------
