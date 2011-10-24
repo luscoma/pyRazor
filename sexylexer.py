@@ -60,7 +60,12 @@ class _InputScanner(object):
     """ Used for iteration. It returns token after token until there
         are no more tokens. (change this to __next__(self) if using Py3.0)
     """
-    # TODO(alusco): Make this move passed None values
+    value = self._next()
+    while value[1] is None:
+      value = self._next()
+    return value
+
+  def _next(self):
     if not self.done_scanning():
       return self.scan_next()
     raise StopIteration

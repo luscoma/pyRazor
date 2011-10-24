@@ -16,11 +16,7 @@ class View(object):
     if token[0] == Token.CODE:
       self.parser.writeCode(token[1])
     elif token[0] == Token.MULTILINE:
-      if token[1] is None:
-        # This token is more like a flag, nothing is output
-        self.parser.skip_new_line = True
-      else:
-        self.parser.writeCode(token[1])
+      self.parser.writeCode(token[1])
     elif token[0] == Token.ONELINE:
       self.parser.writeCode(token[1])
     elif token[0] == Token.TEXT:
