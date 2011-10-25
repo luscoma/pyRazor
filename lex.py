@@ -29,8 +29,8 @@ class RazorLexer(object):
     lex = RazorLexer()
     lex.rules = (
         (Token.ESCAPED, (r"@@", bind(lex.escaped))),
-        (Token.COMMENT, r"@#.*#@"),
-        (Token.LINECOMMENT, r"@#.*"),
+        (Token.COMMENT, (r"@#.*#@", bind(lex.comment))),
+        (Token.LINECOMMENT, (r"@#.*$", bind(lex.linecomment))),
         (Token.ONELINE, (r"@(?:import|from|model) .+$", bind(lex.oneline))),
         (Token.MULTILINE, (r"@\w*.*:$", bind(lex.multiline))),
         (Token.PARENEXPRESSION, (r"@!?\(", bind(lex.paren_expression))),
@@ -118,6 +118,16 @@ class RazorLexer(object):
       return "isinstance(model, " + token[token.rindex(' '):] + ")"
     else:
       return token[1:]
+
+  def comment(self, scanner, token):
+    """Ignores inline comments returning None"""
+    return None
+
+  def linecomment(self, scanner, token):
+    """Ignores comments by returning None"""
+    # Move the parser past the newline character
+    scanner._position += 1
+    return None
 
   def text(self, scanner, token):
     """Returns text escaped with ' escaped"""

@@ -19,7 +19,7 @@ class RenderTests(unittest.TestCase):
     """Tests that the @: does not affect output."""
     self.assertEquals("", pyrazor.render("@:\n\ta=3"))
 
-  def testSimpleModel(self):
+  def testSimpleModel(self): 
     class test:
       pass
 
@@ -63,6 +63,10 @@ class RenderTests(unittest.TestCase):
   </body>
 </html>"""
     self.assertEquals(html, pyrazor.render(html))
+
+  def testCommentIgnored(self):
+    self.assertEquals("<html></html>", pyrazor.render("<html>@# Comment! #@</html>"))
+    self.assertEquals("<html>\n</html>", pyrazor.render("<html>\n@#A whole line is commented!\n</html>"))
 
 if __name__ == '__main__':
       unittest.main()
