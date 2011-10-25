@@ -64,6 +64,13 @@ class RenderTests(unittest.TestCase):
 </html>"""
     self.assertEquals(html, pyrazor.render(html))
 
+  def testIgnoreWhitespace(self):
+    """Tests that ignoring whitespace will strip all tab/spaces prefix on a line"""
+    self.assertEquals("test\ntest", pyrazor.render("test\n\ttest", ignore_whitespace=True))
+    self.assertEquals("test", pyrazor.render("  test", ignore_whitespace=True))
+    self.assertEquals("test", pyrazor.render("\t test", ignore_whitespace=True))
+    self.assertEquals("test\ntest", pyrazor.render("\t test\n\t\ttest", ignore_whitespace=True))
+
   def testCommentIgnored(self):
     self.assertEquals("<html></html>", pyrazor.render("<html>@# Comment! #@</html>"))
     self.assertEquals("<html>\n</html>", pyrazor.render("<html>\n@#A whole line is commented!\n</html>"))
@@ -75,13 +82,12 @@ class RenderTests(unittest.TestCase):
     """Tests that an if statement works"""
     # The renderer will output True\n and False\n due to new line chars.... theres currently no good way around this.
     # Though it's not really a huge issue except when testing for an exact match.
-    template = """
-    @if model:
-      True
-    @else:
-      False
+    template = """@if model:
+  True
+@else:
+  False
     """
-    self.assertEquals("True\n", pyrazor.render(template, True)) 
+    self.assertEquals("True\n", pyrazor.render(template, True, debug=True)) 
     self.assertEquals("False\n", pyrazor.render(template, False)) 
 
 if __name__ == '__main__':

@@ -24,9 +24,9 @@ def bind(handler):
 class RazorLexer(object):
   """Encapsulates the razor token logic"""
   @staticmethod
-  def create():
+  def create(ignore_whitespace = False):
     """Creates the rules bound to a new lexer instance"""
-    lex = RazorLexer()
+    lex = RazorLexer(ignore_whitespace)
     lex.rules = (
         (Token.NEWLINE, (r"[\r]?[\n][ \t]*", bind(lex.newline))),
         (Token.ESCAPED, (r"@@", bind(lex.escaped))),
@@ -41,11 +41,14 @@ class RazorLexer(object):
     lex.lexer = sexylexer.Lexer(lex.rules)
     return lex
 
-  def __init__(self):
+  def __init__(self, ignore_whitespace):
     self.scope = ScopeStack()
+    self.ignore_whitespace = ignore_whitespace
 
   def scan(self, text):
     """Tokenize an input string"""
+    if self.ignore_whitespace:
+      return self.lexer.scan(text.lstrip())
     return self.lexer.scan(text)
 
   def getScope(self):
@@ -141,4 +144,6 @@ class RazorLexer(object):
     token = token[nline:]
     # TODO(alusco): Calculate appropriate indention level based on scope
     self.scope.handler(len(token))
+    if self.ignore_whitespace:
+      return ""
     return token
