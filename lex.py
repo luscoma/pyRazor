@@ -139,5 +139,6 @@ class RazorLexer(object):
     """Handles indention scope"""
     nline = token.index('\n')+1
     token = token[nline:]
+    # TODO(alusco): Calculate appropriate indention level based on scope
     self.scope.handler(len(token))
     return token

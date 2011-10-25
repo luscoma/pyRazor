@@ -16,7 +16,14 @@ class ScopeStack(object):
     self.last_indent = 0
 
   def getScope(self):
+    """Returns the current scope depth"""
     return len(self.stack)
+
+  def getIndent(self):
+    """Returns the indention value that set the last scope"""
+    if len(self.stack) == 0:
+      return 0
+    return self.stack[-1]
 
   def pushCallback(self, scope_callback = None):
     """Pushes a callback onto the scope stack without increasing
