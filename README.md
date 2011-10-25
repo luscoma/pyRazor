@@ -23,7 +23,7 @@ If no model is specified via a `@model` directive any object can be passed into 
 
 ### @view
 ----------------------------------
-The view object is an instance of RazorView and is available to all views at render time.  This object holds any relevant view objects and serves as a way to extends the razor system in the future.  Currently view has the model, data, and helper attributes (view.data and view.helpers are explained in further down).
+The view object is an instance of RazorView and is available to all views at render time.  This object holds any relevant view objects and serves as a way to extends the razor system in the future.
 
 ### Razor ViewBag
 ----------------------------------
@@ -146,10 +146,10 @@ This method could be called elsewhere in the DOM:
 
     <div id="container">
       @for p in products:
-        @view.helper.listrow(p.text)
+        @listrow(p.text)
     </div>
 
-Note: these helpers may only be accessed by the current template or wrapped templates.  Do not however declare a template in some parent template then expect a child that calls @wrap to be able to use it.
+Note: these helpers may only be accessed by the current template. If you need to reuse a helper function create a view that takes in a model of your parameters and call @tmpl(view, model)
 
 ### Notes on overcoming strangeness with non-xml/html documents
 ----------------

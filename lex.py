@@ -14,7 +14,6 @@ class Token:
   EXPRESSION = "EXPRESSION"
   TEXT = "TEXT"
   CODE = "CODE"
-  INDENT = "INDENT"
   NEWLINE = "NEWLINE"
 
 def bind(handler):
@@ -28,6 +27,7 @@ class RazorLexer(object):
     """Creates the rules bound to a new lexer instance"""
     lex = RazorLexer()
     lex.rules = (
+        (Token.INDENT, (r"^[ \t]+", bind(lex.indent))),
         (Token.ESCAPED, (r"@@", bind(lex.escaped))),
         (Token.COMMENT, (r"@#.*#@", bind(lex.comment))),
         (Token.LINECOMMENT, (r"@#.*$", bind(lex.linecomment))),
@@ -37,7 +37,6 @@ class RazorLexer(object):
         (Token.EXPRESSION, (r"@!?(\w+(?:(?:\[.+\])|(?:\(.*\)))?(?:\.[a-zA-Z]+(?:(?:\[.+\])|(?:\(.*\)))?)*)", bind(lex.expression))),
         (Token.TEXT, (r"[^@\r\n]+", bind(lex.text))),
         (Token.NEWLINE, r"[\r]?[\n]"),
-        (Token.INDENT, (r"^\s+", bind(lex.indent))),
     )
     lex.lexer = sexylexer.Lexer(lex.rules)
     return lex
@@ -100,6 +99,9 @@ class RazorLexer(object):
       scanner._position += 1
       return None
     else:
+      # Convert helper syntax to a real python function
+      if token.lower().startswith("@helper"):
+        token = token.lower().replace("helper", "def", 1)
       self.scope.pushScope()
       return token[1:]
 
