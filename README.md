@@ -79,43 +79,43 @@ Wrapped templates are implemented similar to the jQuery wrap method and very use
 
 When using `@wrap` the currently executing template specifies its parent template to render itself within.  That is to say the current template is rendered, then the specified parent template is rendered and the child template is put into the parent.  The syntax for `@wrap` is fairly straight forward:
 
-    @wrap("../some/relative/path.pyr")
+    @view.wrap("../some/relative/path.pyr")
 
 Importantly the template to wrap the current template in can be choosen dynamically by the view and can be declared at any place in the child template.  In the case where multiple wrap statements are encountered the last one wins.
 
     @if Model.something:
-      @wrap("../something.pyr")
+      @view.wrap("../something.pyr")
     @else:
-      @wrap("../else.pyr")
+      @view.wrap("../else.pyr")
 
-When wrapping a template the parent template must specify a `@body` to desginate where to render the wrapped template's output.  In addition pyRazor allows for sections to allow child templates to render data in multiple areas of a parent template.  These sections can either be required or optional can be rendered by child templates. Note: if a section is required and doesn't exist in the child template a parsing exception is thrown.
+When wrapping a template the parent template must specify a `@body()` to desginate where to render the wrapped template's output.  In addition pyRazor allows for sections to allow child templates to render data in multiple areas of a parent template.  These sections can either be required or optional can be rendered by child templates. Note: if a section is required and doesn't exist in the child template a parsing exception is thrown.
 
     @# Parent Template
     <div>
-      @section("optional section"):
+      @view.section("optional section"):
         <p>This paragraph is rendered if no section is in the nested template</p>
         <p>This one too, actually by specifing this default implementation this section became optional!</p>
-      @section("required section")
-      @body
+      @view.section("required section")
+      @view.body()
     </div>
 
 In a wrapped child template these sections are implemented using the same syntax. NOTE: A parsing exception is thrown if a section defined in a child template is not present in the parent template:
 
     @# Child Template
-    @section("name"):
+    @view.section("name"):
       <p>This is a paragraph that is provided by the child and will override the parents implementation</p>
-    @section("somethingRequired"):
+    @view.section("somethingRequired"):
       <p>If this was not implemented an exception is thrown<p>
     <div>
       This this element would be rendered in place of the body directive
     </div>
-    <div>Really @@body stands for anything not in a section</div>
+    <div>Really @@view.body() stands for anything not in a section</div>
 
-pyRazor also defines the `@tmpl` directive to directly render another template inline into the current template.  This is the opposite of wrap and is useful for creating and rendering reusable components into a parent template.  Unlike the `@wrap` directive the `@render` directive renders the specified template at the current position passing in an optional model and view.data:
+pyRazor also defines the `@view.tmpl` directive to directly render another template inline into the current template.  This is the opposite of wrap and is useful for creating and rendering reusable components into a parent template.  Unlike the `@wrap` directive the `@render` directive renders the specified template at the current position passing in an optional model and view.data:
 
-    @tmpl("../some/temp.late")
-    @tmpl("../some/temp.late",model.someOtherModel)
-    @tmpl("../some/temp.late",model.someOtherModel,customViewData)
+    @view.tmpl("../some/temp.late")
+    @view.tmpl("../some/temp.late",model.someOtherModel)
+    @view.tmpl("../some/temp.late",model.someOtherModel,customViewData)
     
 ### Text output
 All razor output that is printed is automagically html-escaped.  If for some reason this is not what you want add an ! immediately following the @ symbol to indicate that escaping should not be performed:
