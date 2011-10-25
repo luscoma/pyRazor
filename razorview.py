@@ -62,9 +62,9 @@ class View(object):
     # TODO(alusco): print out a wrapped body
     raise NotImplementedError("Body isn't implemented yet")
 
-  def render(self, model=None, debug=False):
+  def render(self, model=None):
     self.model = model
-    return self._render(model, debug=debug)
+    return self._render(model)
 
 class ViewIO(StringIO):
   """Subclass of StringIO which can write a line"""
@@ -106,7 +106,7 @@ class ViewBuilder(object):
   def _writeHeader(self):
     """Writes the function header"""
     # The last line here must not have a trailing \n
-    self.buffer.writeline("def template(self, model=None, debug=False):")
+    self.buffer.writeline("def template(self, model=None):")
     self.buffer.scopeline("view = self")
     self.buffer.scopeline("__io = StringIO()")
 
