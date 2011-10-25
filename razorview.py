@@ -45,6 +45,22 @@ class View(object):
     # Bind the render function to this instance
     self._render = MethodType(template, self)
 
+  def tmpl(self, file):
+    # TODO(alusco): Print a template from a file into this template
+    raise NotImplementedError("Prints out the template isn't implemented yet")
+
+  def wrap(self, file):
+    # TODO(alusco): Wrap the template
+    raise NotImplementedError("Wraps not implemented yet")
+
+  def section(self, name):
+    # TODO(alusco): Output a section
+    raise NotImplementedError("Section isn't implemented yet")
+
+  def body(self):
+    # TODO(alusco): print out a wrapped body
+    raise NotImplementedError("Body isn't implemented yet")
+
   def render(self, model=None):
     self.model = model
     return self._render(model)
