@@ -82,11 +82,7 @@ class RenderTests(unittest.TestCase):
     """Tests that an if statement works"""
     # The renderer will output True\n and False\n due to new line chars.... theres currently no good way around this.
     # Though it's not really a huge issue except when testing for an exact match.
-    template = """@if model:
-  True
-@else:
-  False
-    """
+    template = "@if model:\n\tTrue\n@else:\n\tFalse "
     self.assertEquals("True\n", pyrazor.render(template, True, debug=True)) 
     self.assertEquals("False\n", pyrazor.render(template, False)) 
 
