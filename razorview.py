@@ -28,10 +28,9 @@ class View(object):
       self.parser.writeText(token[1])
     elif token[0] == Token.EXPRESSION:
       self.parser.writeExpression(token[1])
-    elif token[0] == Token.INDENT:
-      self.parser.writeText(token[1])
     elif token[0]== Token.NEWLINE:
       self.parser.handleNewLine(scope)
+      self.parser.writeText(token[1])
 
   def build(self, debug = False):
     # Build our code and indent it one

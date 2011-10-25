@@ -15,6 +15,7 @@ class Token:
   TEXT = "TEXT"
   CODE = "CODE"
   NEWLINE = "NEWLINE"
+  INDENT = "INDENT"
 
 def bind(handler):
   """Simple binding function"""
@@ -27,7 +28,7 @@ class RazorLexer(object):
     """Creates the rules bound to a new lexer instance"""
     lex = RazorLexer()
     lex.rules = (
-        (Token.INDENT, (r"^[ \t]+", bind(lex.indent))),
+        (Token.NEWLINE, (r"[\r]?[\n][ \t]*", bind(lex.newline))),
         (Token.ESCAPED, (r"@@", bind(lex.escaped))),
         (Token.COMMENT, (r"@#.*#@", bind(lex.comment))),
         (Token.LINECOMMENT, (r"@#.*$", bind(lex.linecomment))),
@@ -36,7 +37,6 @@ class RazorLexer(object):
         (Token.PARENEXPRESSION, (r"@!?\(", bind(lex.paren_expression))),
         (Token.EXPRESSION, (r"@!?(\w+(?:(?:\[.+\])|(?:\(.*\)))?(?:\.[a-zA-Z]+(?:(?:\[.+\])|(?:\(.*\)))?)*)", bind(lex.expression))),
         (Token.TEXT, (r"[^@\r\n]+", bind(lex.text))),
-        (Token.NEWLINE, r"[\r]?[\n]"),
     )
     lex.lexer = sexylexer.Lexer(lex.rules)
     return lex
@@ -135,7 +135,9 @@ class RazorLexer(object):
     """Returns text escaped with ' escaped"""
     return token.replace("'","\\'")
 
-  def indent(self, scanner, token):
+  def newline(self, scanner, token):
     """Handles indention scope"""
+    nline = token.index('\n')+1
+    token = token[nline:]
     self.scope.handler(len(token))
     return token

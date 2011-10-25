@@ -2,6 +2,14 @@
 # Handles managing the indent stack for multiline tokens
 
 class ScopeStack(object):
+  """
+  Manages scope based on indentation.
+  
+  One quirk is that increases in scope are delayed one call to handler.
+  This allows the line increasing the scope to be written at the old scope depth.
+  In contrast decreases in scope are immediate allowing the new line to be immediately
+  written at the decreased scope depth.
+  """
   def __init__(self):
     self.stack = []
     self.handlers = {}
