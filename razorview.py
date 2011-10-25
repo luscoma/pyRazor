@@ -14,23 +14,7 @@ class View(object):
 
   def parseToken(self, scope, token):
     """Internal function used to add a token to the view"""
-    if token[0] == Token.CODE:
-      self.parser.writeCode(token[1])
-    elif token[0] == Token.MULTILINE:
-      self.parser.writeCode(token[1])
-    elif token[0] == Token.ONELINE:
-      self.parser.writeCode(token[1])
-    elif token[0] == Token.TEXT:
-      self.parser.writeText(token[1])
-    elif token[0] == Token.PARENEXPRESSION:
-      self.parser.writeExpression(token[1])
-    elif token[0] == Token.ESCAPED:
-      self.parser.writeText(token[1])
-    elif token[0] == Token.EXPRESSION:
-      self.parser.writeExpression(token[1])
-    elif token[0]== Token.NEWLINE:
-      self.parser.handleNewLine(scope)
-      self.parser.writeText(token[1])
+    self.parser.parse(scope, token)
 
   def build(self, debug = False):
     # Build our code and indent it one
@@ -98,7 +82,7 @@ class ViewBuilder(object):
   def __init__(self):
     self.buffer = ViewIO()
     self.cache = None
-    self.skip_new_line = False
+    self.lasttoken = (None,)
     self.buffer.setscope(1)
     self._writeHeader()
 
@@ -112,16 +96,17 @@ class ViewBuilder(object):
   def writeCode(self, code):
     """Writes a line of code to the view buffer"""
     self.buffer.scopeline(code)
-    self.skip_new_line = True
 
   def writeText(self, token):
     """Writes a token to the view buffer"""
+    self.maybePrintIndent()
     self.buffer.writescope("__io.write('")
     self.buffer.write(token)
     self.buffer.writeline("')")
 
   def writeExpression(self, expression):
     """Writes an expression to the current line"""
+    self.maybePrintIndent()
     self.buffer.writescope("__io.write(")
     self.buffer.write(expression)
     self.buffer.writeline(")")
@@ -132,17 +117,49 @@ class ViewBuilder(object):
       self.close()
     return self.cache
 
-  def handleNewLine(self, scope):
-    """Handles a new line"""
-    if not self.skip_new_line:
+  def parse(self, scope, token):
+    if token[0] == Token.CODE:
+      self.writeCode(token[1])
+    elif token[0] == Token.MULTILINE:
+      self.writeCode(token[1])
+    elif token[0] == Token.ONELINE:
+      self.writeCode(token[1])
+    elif token[0] == Token.TEXT:
+      self.writeText(token[1])
+    elif token[0] == Token.PARENEXPRESSION:
+      self.writeExpression(token[1])
+    elif token[0] == Token.ESCAPED:
+      self.writeText(token[1])
+    elif token[0] == Token.EXPRESSION:
+      self.writeExpression(token[1])
+    elif token[0]== Token.NEWLINE:
+      self.maybePrintNewline()
+      self.buffer.setscope(scope+1)
+
+    self.lasttoken = token
+
+  def maybePrintIndent(self):
+    """Handles situationally printing indention"""
+    if self.lasttoken[0] != Token.NEWLINE:
+      return
+
+    # TODO(alusco): remove indentation thats part of the scope
+    if len(self.lasttoken[1]) > 0:
+      self.buffer.scopeline("__io.write('" + self.lasttoken[1] + "')")
+
+  def maybePrintNewline(self):
+    """Handles situationally printing a new line"""
+    if self.lasttoken is None:
+      return
+
+    # Anywhere we writecode does not need the new line character
+    no_new_line = (Token.CODE, Token.MULTILINE, Token.ONELINE)
+    if not self.lasttoken[0] in no_new_line:
       self.buffer.scopeline("__io.write('\\n')")
-    else:
-      self.skip_new_line = False
-    # Sets the scope (our minimum scope is 1)
-    self.buffer.setscope(scope+1)
 
   def close(self):
     if not self.cache:
+      self.buffer.setscope(1)
       self.buffer.scopeline("__out = __io.getvalue()")
       self.buffer.scopeline("__io.close()")
       self.buffer.scopeline("return __out")
