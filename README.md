@@ -123,11 +123,6 @@ All razor output that is printed is automagically html-escaped.  If for some rea
     @model.someText
     @!model.someHtml
 
-There is also a @debug that is only visible if the debug:true paramter is passed into the template:
-
-    @debug("Some text to be written to the document")
-    @!debug("<p>Some html to be written to the document</p>")
-
 The @() syntax evaluates whatever single expression is in the () and prints it out:
 
     @("something simple")
