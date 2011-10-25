@@ -109,7 +109,7 @@ class RazorLexer(object):
 
   def expression(self, scanner, token):
     if not self.shouldEscape(token):
-      return token[1:]
+      return token[2:]
     return "cgi.escape(str(" + token[1:] + "))"
 
   def oneline(self, scanner, token):

@@ -1,5 +1,6 @@
 # Alex Lusco
 
+import cgi
 from lex import Token
 from types import MethodType
 from StringIO import StringIO

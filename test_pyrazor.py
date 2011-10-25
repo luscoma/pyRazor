@@ -6,6 +6,7 @@
 
 import unittest
 import pyrazor
+import cgi
 
 class RenderTests(unittest.TestCase):
 
@@ -40,6 +41,17 @@ class RenderTests(unittest.TestCase):
     m = subdict()
     m['test'] = 3
     self.assertEquals("3", pyrazor.render("@model dict\n@model['test']", m))
+
+  def testHtmlEscape(self):
+    class test:
+      pass
+
+    model = test()
+    model.a = "<html>"
+    self.assertEquals("<html>", pyrazor.render("@!model.a", model))
+    self.assertEquals(cgi.escape("<html>"), pyrazor.render("@model.a", model))
+    self.assertEquals("<html>", pyrazor.render("@!(model.a)", model))
+    self.assertEquals(cgi.escape("<html>"), pyrazor.render("@(model.a)", model))
 
   def testHtml(self):
     html = """<html>
