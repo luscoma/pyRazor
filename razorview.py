@@ -157,8 +157,6 @@ class ViewBuilder(object):
     if self.lasttoken is None:
       return
 
-    print "last"
-    print self.lasttoken
     # Anywhere we writecode does not need the new line character
     no_new_line = (Token.CODE, Token.MULTILINE, Token.ONELINE)
     if not self.lasttoken[0] in no_new_line:
