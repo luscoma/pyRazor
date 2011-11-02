@@ -111,11 +111,10 @@ In a wrapped child template these sections are implemented using the same syntax
     </div>
     <div>Really @@view.body() stands for anything not in a section</div>
 
-pyRazor also defines the `@view.tmpl` directive to directly render another template inline into the current template.  This is the opposite of wrap and is useful for creating and rendering reusable components into a parent template.  Unlike the `@wrap` directive the `@render` directive renders the specified template at the current position passing in an optional model and view.data:
+pyRazor also defines the `@view.tmpl` directive to directly render another template inline into the current template.  This is the opposite of wrap and is useful for creating and rendering reusable components into a parent template.  Unlike the `@wrap` directive the `@render` directive renders the specified template at the current position passing in an optional model:
 
     @view.tmpl("../some/temp.late")
     @view.tmpl("../some/temp.late",model.someOtherModel)
-    @view.tmpl("../some/temp.late",model.someOtherModel,customViewData)
     
 ### Text output
 All razor output that is printed is automagically html-escaped.  If for some reason this is not what you want add an ! immediately following the @ symbol to indicate that escaping should not be performed:

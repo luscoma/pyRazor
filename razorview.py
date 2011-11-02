@@ -1,6 +1,7 @@
 # Alex Lusco
 
 import cgi
+import viewloader
 from lex import Token
 from types import MethodType
 from StringIO import StringIO
@@ -29,9 +30,10 @@ class View(object):
     # Bind the render function to this instance
     self._render = MethodType(template, self)
 
-  def tmpl(self, file):
-    # TODO(alusco): Print a template from a file into this template
-    raise NotImplementedError("Prints out the template isn't implemented yet")
+  def tmpl(self, file, submodel=None):
+    tmplModel = submodel if submodel is not None else self.model
+    # Render this template into our io
+    viewloader.loadfile(file)._render(self.io, tmplModel)
 
   def wrap(self, file):
     # TODO(alusco): Wrap the template
@@ -47,7 +49,11 @@ class View(object):
 
   def render(self, model=None):
     self.model = model
-    return self._render(model)
+    self.io = StringIO()
+    self._render(self.io, model)
+    template_data = self.io.getvalue()
+    self.io.close()
+    return template_data
 
 class ViewIO(StringIO):
   """Subclass of StringIO which can write a line"""
@@ -89,9 +95,8 @@ class ViewBuilder(object):
   def _writeHeader(self):
     """Writes the function header"""
     # The last line here must not have a trailing \n
-    self.buffer.writeline("def template(self, model=None):")
+    self.buffer.writeline("def template(self, __io, model=None):")
     self.buffer.scopeline("view = self")
-    self.buffer.scopeline("__io = StringIO()")
 
   def writeCode(self, code):
     """Writes a line of code to the view buffer"""
@@ -161,9 +166,5 @@ class ViewBuilder(object):
 
   def close(self):
     if not self.cache:
-      self.buffer.setscope(1)
-      self.buffer.scopeline("__out = __io.getvalue()")
-      self.buffer.scopeline("__io.close()")
-      self.buffer.scopeline("return __out")
       self.cache = self.buffer.getvalue()
       self.buffer.close()
