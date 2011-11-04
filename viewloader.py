@@ -11,11 +11,11 @@ from razorview import View
 def buildview(text, ignore_whitespace = False, debug=False):
   """Parses text building a view"""
   lex = RazorLexer.create(ignore_whitespace)
-  view = View()
+  view = View(lex.scope)
   for token in lex.scan(text):
     if debug:
       print token
-    view.parseToken(lex.getScope(), token)
+    view.parseToken(token)
   view.build(debug=debug)
   return view
 

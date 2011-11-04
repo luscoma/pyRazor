@@ -42,7 +42,7 @@ class RazorLexer(object):
     return lex
 
   def __init__(self, ignore_whitespace):
-    self.scope = ScopeStack()
+    self.scope = ScopeStack(ignore_whitespace)
     self.ignore_whitespace = ignore_whitespace
 
   def scan(self, text):
@@ -50,10 +50,6 @@ class RazorLexer(object):
     if self.ignore_whitespace:
       return self.lexer.scan(text.lstrip())
     return self.lexer.scan(text)
-
-  def getScope(self):
-    """Returns the current scope level"""
-    return self.scope
 
   # Token Parsers
   def shouldEscape(self, token):
@@ -96,7 +92,7 @@ class RazorLexer(object):
       scanner.ignoreRules = True
       def pop_multiline():
         scanner.ignoreRules = False
-      self.scope.pushCallback(pop_multiline)
+      self.scope.indentstack.mark(pop_multiline)
       # We have to move past the end of line (this is a special case)
       # $ matches at the end of a line so it should be just +1
       scanner._position += 1
@@ -142,8 +138,5 @@ class RazorLexer(object):
     """Handles indention scope"""
     nline = token.index('\n')+1
     token = token[nline:]
-    # TODO(alusco): Calculate appropriate indention level based on scope
-    self.scope.handler(len(token))
-    if self.ignore_whitespace:
-      return ""
-    return token
+    self.scope.handleIndentation(len(token))
+    return token[self.scope.indentstack.getRelativeIndentation():]

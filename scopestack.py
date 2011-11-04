@@ -1,57 +1,93 @@
 # Alex Lusco
 # Handles managing the indent stack for multiline tokens
 
+class IndentStack(object):
+  """
+  Handles indention, tracking python scope by block.  Important points are marked so that 
+  they can be referenced later to determine the appropriate level of indention.
+
+  @param nowhitespace  causes getRelativeIndentation to always return 0
+  """
+  def __init__(self, nowhitespace = False):
+    self._nowhitespace = nowhitespace
+    # Indentation Tracking
+    self.stack = []
+    self.indentation = 0
+    # Handler Tracking
+    self.handlers = {}
+    # Mark
+    self.markHandler = None
+    self.mark = False
+
+  def mark(self, handler = None):
+    """Marks the next indent level as a scope boundary"""
+    self.mark = True
+    self.markHandler = handler
+
+  def getScopeIndentation(self):
+    """Returns the level of indentation for the this scope"""
+    if len(self.stack) > 0:
+      return self.stack[-1]
+    return 0
+
+  def getRelativeIndentation(self):
+    """Returns the relative indent of this line relative to its scope"""
+    if not self._nowhitespace
+      return self.indentation - self.getScopeIndentation()
+    else:
+      return 0
+
+  def handleIndentation(self, indent):
+    """Updates the current indention level"""
+    self._popIndentation(indent)
+    if mark:
+      self._pushIndentation(indent)
+      mark = False
+    self.indentation = indent
+
+  def _popIndentation(self, indent):
+    """Tries to pop any indents greater than this one"""
+    # Pop any indents higher than our current level
+    while len(self.stack) > 0 and self.stack[-1] > indent:
+      self._tryPopHandler(self.stack.pop())
+
+  def _tryPopHandler(self, indent):
+    """Attempts to pop any scope handlers"""
+    if self.handlers.has_key(indent):
+      self.handlers.pop(indent)()
+
+  def _pushIndentation(self, indent):
+    """Pushes this identation onto the stack"""
+    # Check if we need to push this indent on the stack
+    if indent > self.getScopeIndentation():
+      self.stack.append(indent)
+      self.handlers[indent] = self.markHandler
+    else if self.markhandler is not None:
+      # This was a case where a multiline token has no 
+      self.markHandler()
+
 class ScopeStack(object):
   """
-  Manages scope based on indentation.
-  
-  One quirk is that increases in scope are delayed one call to handler.
-  This allows the line increasing the scope to be written at the old scope depth.
-  In contrast decreases in scope are immediate allowing the new line to be immediately
-  written at the decreased scope depth.
+  Manages scope based on tokens on top of an indentstack.
+  The indentstack will track underlying scope indent and
+  can be used to determine indentation levels for output.
   """
-  def __init__(self):
+  def __init__(self, nowhitespace = False):
     self.scope = 0
-    self.indentblock = []
-    self.handlers = {}
+    self.indentstack = IndentStack(nowhitespace)
 
   def getScope(self):
     """Returns the current scope depth"""
     return scope
 
-  def getIndent(self):
-    """Returns the indention value that set the last scope"""
-    if len(self.indentblock) == 0:
-      return 0
-    return self.indentblock[-1]
-
-  def pushCallback(self, scope_callback = None):
-    """Pushes a callback onto the scope stack without increasing
-       the scope.  This callback will be called when the logical scope
-       returns to this indent level.  This does not increase the
-       overall scope depth.
-    """
-    if scope_callback:
-      self.handlers[self.getIndent()] = scope_callback
-
-  def pushScope(self):
-    """Pushes a scope onto the stack"""
+  def enterScope(self):
+    """Enters a new scope level"""
+    def _leaveScope():
+      self.scope -= 1
     self.scope += 1
+    self.indentstack.mark(_leaveScope)
 
-  def handler(self, indent):
+  def handleIndentation(self, indent):
     """Handles indention level"""
-    if self.scope > len(self.indentblock):
-      self.stack.append(indent)
+    self.indentstack.handleIndentation(indent)
 
-    while len(self.indentblock) > 0 and self.indentblock[-1] >= indent:
-      self._tryPopScope(self.indentblock.pop())
-
-    # We have to pop the scope just in case we had a callback
-    # at indent 0, very special case, but common.
-    self._tryPopScope(indent)
-    self.last_indent = indent
-
-  def _tryPopScope(self, scope):
-    """Attempts to pop any scope handlers"""
-    if self.handlers.has_key(scope):
-      self.handlers.pop(scope)()

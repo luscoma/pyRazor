@@ -8,14 +8,14 @@ from StringIO import StringIO
 
 class View(object):
   """A razor view"""
-  def __init__(self):
-    self.parser = ViewBuilder()
+  def __init__(self, scope):
+    self.parser = ViewBuilder(scope)
     # TODO(alusco): Make this settable
     self.keepNewLines = True
 
-  def parseToken(self, scope, token):
+  def parseToken(self, token):
     """Internal function used to add a token to the view"""
-    self.parser.parse(scope, token)
+    self.parser.parse(token)
 
   def build(self, debug = False):
     # Build our code and indent it one
@@ -85,10 +85,11 @@ class ViewIO(StringIO):
       self.write('\n')
 
 class ViewBuilder(object):
-  def __init__(self):
+  def __init__(self, scope):
     self.buffer = ViewIO()
     self.cache = None
     self.lasttoken = (None,)
+    self.scope = scope
     self.buffer.setscope(1)
     self._writeHeader()
 
@@ -122,8 +123,7 @@ class ViewBuilder(object):
       self.close()
     return self.cache
 
-  def parse(self, scope, token):
-    self.scope = scope
+  def parse(self, token):
     if token[0] == Token.CODE:
       self.writeCode(token[1])
     elif token[0] == Token.MULTILINE:
@@ -140,7 +140,7 @@ class ViewBuilder(object):
       self.writeExpression(token[1])
     elif token[0]== Token.NEWLINE:
       self.maybePrintNewline()
-      self.buffer.setscope(scope.getScope()+1)
+      self.buffer.setscope(self.scope.getScope()+1)
 
     self.lasttoken = token
 
@@ -149,7 +149,6 @@ class ViewBuilder(object):
     if self.lasttoken[0] != Token.NEWLINE:
       return
 
-    # TODO(alusco): remove indentation thats part of the scope
     if len(self.lasttoken[1]) > 0:
       self.buffer.scopeline("__io.write('" + self.lasttoken[1] + "')")
 
