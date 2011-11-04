@@ -53,7 +53,7 @@ class RazorLexer(object):
 
   def getScope(self):
     """Returns the current scope level"""
-    return self.scope.getScope()
+    return self.scope
 
   # Token Parsers
   def shouldEscape(self, token):
@@ -105,7 +105,7 @@ class RazorLexer(object):
       # Convert helper syntax to a real python function
       if token.lower().startswith("@helper"):
         token = token.lower().replace("helper", "def", 1)
-      self.scope.pushScope()
+      self.scope.enterScope()
       return token[1:]
 
   def escaped(self, scanner, token):

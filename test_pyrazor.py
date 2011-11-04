@@ -76,14 +76,14 @@ class RenderTests(unittest.TestCase):
     self.assertEquals("<html>\n</html>", pyrazor.render("<html>\n@#A whole line is commented!\n</html>"))
 
   def testHelperFunction(self):
-    self.assertEquals("viewtext\n<s>helper</s>\nviewtext", pyrazor.render("@helper test(name):\n\t<s>@name</s>\nviewtext\n@test('helper')\nviewtext"))
+    self.assertEquals("viewtext\n<s>helper</s>\nviewtext", pyrazor.render("@helper test(name):\n\t<s>@name</s>\nviewtext\n@test('helper')\nviewtext", debug=True))
 
   def testMultilineIf(self):
     """Tests that an if statement works"""
     # The renderer will output True\n and False\n due to new line chars.... theres currently no good way around this.
     # Though it's not really a huge issue except when testing for an exact match.
     template = "@if model:\n\tTrue\n@else:\n\tFalse "
-    self.assertEquals("True\n", pyrazor.render(template, True, debug=True)) 
+    self.assertEquals("True\n", pyrazor.render(template, True)) 
     self.assertEquals("False\n", pyrazor.render(template, False)) 
 
 if __name__ == '__main__':

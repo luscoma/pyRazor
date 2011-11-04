@@ -11,19 +11,19 @@ class ScopeStack(object):
   written at the decreased scope depth.
   """
   def __init__(self):
-    self.stack = []
+    self.scope = 0
+    self.indentblock = []
     self.handlers = {}
-    self.last_indent = 0
 
   def getScope(self):
     """Returns the current scope depth"""
-    return len(self.stack)
+    return scope
 
   def getIndent(self):
     """Returns the indention value that set the last scope"""
-    if len(self.stack) == 0:
+    if len(self.indentblock) == 0:
       return 0
-    return self.stack[-1]
+    return self.indentblock[-1]
 
   def pushCallback(self, scope_callback = None):
     """Pushes a callback onto the scope stack without increasing
@@ -32,19 +32,19 @@ class ScopeStack(object):
        overall scope depth.
     """
     if scope_callback:
-      self.handlers[self.last_indent] = scope_callback
+      self.handlers[self.getIndent()] = scope_callback
 
-  def pushScope(self, scope_callback = None):
+  def pushScope(self):
     """Pushes a scope onto the stack"""
-    self.pushCallback(scope_callback)
-    self.stack.append(self.last_indent)
+    self.scope += 1
 
   def handler(self, indent):
     """Handles indention level"""
-    while len(self.stack) > 0 and self.stack[-1] >= indent:
-      self.stack.pop()
-      scope = len(self.stack)
-      self._tryPopScope(scope)
+    if self.scope > len(self.indentblock):
+      self.stack.append(indent)
+
+    while len(self.indentblock) > 0 and self.indentblock[-1] >= indent:
+      self._tryPopScope(self.indentblock.pop())
 
     # We have to pop the scope just in case we had a callback
     # at indent 0, very special case, but common.

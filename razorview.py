@@ -123,6 +123,7 @@ class ViewBuilder(object):
     return self.cache
 
   def parse(self, scope, token):
+    self.scope = scope
     if token[0] == Token.CODE:
       self.writeCode(token[1])
     elif token[0] == Token.MULTILINE:
@@ -139,7 +140,7 @@ class ViewBuilder(object):
       self.writeExpression(token[1])
     elif token[0]== Token.NEWLINE:
       self.maybePrintNewline()
-      self.buffer.setscope(scope+1)
+      self.buffer.setscope(scope.getScope()+1)
 
     self.lasttoken = token
 
