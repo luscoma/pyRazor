@@ -118,6 +118,8 @@ class ViewBuilder(object):
     self.buffer.scopeline("if __e != 'None':")
     self.buffer.scope += 1
     self.buffer.scopeline("__io.write(__e)")
+    # We rely on a hack in maybePrintNewline to determine
+    # that the last token was an expression and to output the \n at scope+1
     self.buffer.scope -= 1
 
   def getTemplate(self):
@@ -162,8 +164,13 @@ class ViewBuilder(object):
 
     # Anywhere we writecode does not need the new line character
     no_new_line = (Token.CODE, Token.MULTILINE, Token.ONELINE)
+    up_scope = (Token.EXPRESSION, Token.PARENEXPRESSION)
     if not self.lasttoken[0] in no_new_line:
+      if self.lasttoken[0] in up_scope:
+        self.buffer.scope += 1
       self.buffer.scopeline("__io.write('\\n')")
+      if self.lasttoken[0] in up_scope:
+        self.buffer.scope -= 1
 
   def close(self):
     if not self.cache:
