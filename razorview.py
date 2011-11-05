@@ -113,9 +113,12 @@ class ViewBuilder(object):
   def writeExpression(self, expression):
     """Writes an expression to the current line"""
     self.maybePrintIndent()
-    self.buffer.writescope("__io.write(")
-    self.buffer.write(expression)
-    self.buffer.writeline(")")
+    self.buffer.writescope("__e = ")
+    self.buffer.writeline(expression)
+    self.buffer.scopeline("if __e != 'None':")
+    self.buffer.scope += 1
+    self.buffer.scopeline("__io.write(__e)")
+    self.buffer.scope -= 1
 
   def getTemplate(self):
     """Retrieves the templates text"""
