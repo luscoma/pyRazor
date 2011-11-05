@@ -139,4 +139,6 @@ class RazorLexer(object):
     nline = token.index('\n')+1
     token = token[nline:]
     self.scope.handleIndentation(len(token))
-    return token[self.scope.indentstack.getRelativeIndentation():]
+    if self.ignore_whitespace:
+      return ""
+    return token[self.scope.indentstack.getScopeIndentation():]
