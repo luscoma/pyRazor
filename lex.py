@@ -92,7 +92,7 @@ class RazorLexer(object):
       scanner.ignoreRules = True
       def pop_multiline():
         scanner.ignoreRules = False
-      self.scope.indentstack.mark(pop_multiline)
+      self.scope.indentstack.markScope(pop_multiline)
       # We have to move past the end of line (this is a special case)
       # $ matches at the end of a line so it should be just +1
       scanner._position += 1

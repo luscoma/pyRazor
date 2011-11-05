@@ -19,7 +19,7 @@ class IndentStack(object):
     self.markHandler = None
     self.mark = False
 
-  def mark(self, handler = None):
+  def markScope(self, handler = None):
     """Marks the next indent level as a scope boundary"""
     self.mark = True
     self.markHandler = handler
@@ -32,7 +32,7 @@ class IndentStack(object):
 
   def getRelativeIndentation(self):
     """Returns the relative indent of this line relative to its scope"""
-    if not self._nowhitespace
+    if not self._nowhitespace:
       return self.indentation - self.getScopeIndentation()
     else:
       return 0
@@ -40,9 +40,9 @@ class IndentStack(object):
   def handleIndentation(self, indent):
     """Updates the current indention level"""
     self._popIndentation(indent)
-    if mark:
+    if self.mark:
       self._pushIndentation(indent)
-      mark = False
+      self.mark = False
     self.indentation = indent
 
   def _popIndentation(self, indent):
@@ -62,7 +62,7 @@ class IndentStack(object):
     if indent > self.getScopeIndentation():
       self.stack.append(indent)
       self.handlers[indent] = self.markHandler
-    else if self.markhandler is not None:
+    elif self.markHandler is not None:
       # This was a case where a multiline token has no 
       self.markHandler()
 
@@ -78,14 +78,14 @@ class ScopeStack(object):
 
   def getScope(self):
     """Returns the current scope depth"""
-    return scope
+    return self.scope
 
   def enterScope(self):
     """Enters a new scope level"""
     def _leaveScope():
       self.scope -= 1
     self.scope += 1
-    self.indentstack.mark(_leaveScope)
+    self.indentstack.markScope(_leaveScope)
 
   def handleIndentation(self, indent):
     """Handles indention level"""
