@@ -23,4 +23,4 @@ def loadfile(file):
   """Loads a file from disk and returns a view"""
   with open(file, 'r') as f:
     viewdata = f.readlines()
-    return buildview(viewdata)
+    return buildview("".join(viewdata))
