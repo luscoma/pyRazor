@@ -2,7 +2,7 @@
 Loads a view either via dynamically loading its pyr file or building a pyr file.
 """
 
-__author__ = "Alex Lusco"
+__author__ = "Alex Lusco (luscoma)"
 
 # Imports
 from lex import RazorLexer, Token
