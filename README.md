@@ -185,7 +185,7 @@ To generalize razor templates, pyRazor assumes all if/else/loop statements are a
 
     @if name == "alex":
       "tag": "alex",
-    @elif: name == "bob:
+    @elif name == "bob:
         @:
             name = "john"
             l = len(name)
@@ -202,36 +202,20 @@ Ideally this thing should have some intelligence (i.e. mvc razor does a good job
 
 ### Rendering templates from code
 ---------------------
-**A lot of this is not finalized**
-
 When not compiled you must import the pyRazor library and call compile or render.  Compile parses and compiles a template into a python function that can be rendered via the templates render method.  pyRazor.render compiles a template internally then renders it without returning the compiled model
 
-    import pyRazor
+    import pyrazor
 
-    # Render template without giving a model
-    pyRazor.render("../path/to.template")
+    # Render template without a model
+    pyrazor.Render("hello")  # hello
 
-    # In this case the model is a string we specify
-    pyRazor.render("../path/to.template", "The model is a string")
+    # Render a simple template with a model
+    pyRazor.Render("@Model", "The model is a string")
 
-    # In this case we also specify a few extra paramters
-    pyRazor.render("../path/to.template", "The model is a string", debug=true)
-    
-    # Pass in a template inline (Not recommended)
-    pyRazor.render("@Model", "The model is a string")
-    
-    # Just compile the template
-    pyRazor.compile("@Model", "The model is a string")
+    # Just compile the template for repeated rendering
+    view = pyRazor.Parse("@Model")
+    view.Render("the model is a string")
 
-Templates can also be compiled externally into python files.  Once this is done just import the template directly and call its render method minus the template path since it's not needed:
-
-    import myTemplate
-
-    myTemplate.render("My Model", debug=true)
-
-#### Named parameters include:
-  * debug - boolean - defaults to false removing @debug directives.
-  * nocache - boolean - defaults to false, allowing the engine to cache templates by compiling them.
 
 ### Unsupported Stuff
 --------------

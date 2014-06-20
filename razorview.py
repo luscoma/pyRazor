@@ -1,39 +1,57 @@
 # Alex Lusco
 
 import cgi
-import viewloader
+import logging
+
+import lex
+import types
+
 from lex import Token
-from types import MethodType
 from StringIO import StringIO
+
+  
+def ParseView(text, ignore_whitespace):
+  """Creates a razorview from template text.
+
+  Args:
+    text: The template text to render
+    ignore_whitespace: If true whitespace at the beghning of each line is
+        stripped when parsing.
+  """
+  lexer = lex.RazorLexer.create(ignore_whitespace)
+  builder = ViewBuilder(lexer.scope)
+  for token in lexer.scan(text):
+    logging.debug('Token scanned: %s', token)
+    builder.parse(token)
+  return View(builder, ignore_whitespace)
+
 
 class View(object):
   """A razor view"""
-  def __init__(self, scope):
-    self.parser = ViewBuilder(scope)
-    # TODO(alusco): Make this settable
-    self.keepNewLines = True
+  
+  def __init__(self, builder, ignore_whitespace):
+    self.renderer = types.MethodType(
+        builder.Build(), self)
+    self.ignore_whitespace = ignore_whitespace
 
-  def parseToken(self, token):
-    """Internal function used to add a token to the view"""
-    self.parser.parse(token)
+  def Render(self, model=None):
+    io = StringIO()
+    self.RenderTo(io, model)
+    value = io.getvalue()
+    io.close()
+    return value
 
-  def build(self, debug = False):
-    # Build our code and indent it one
-    code = self.parser.getTemplate()
+  def RenderTo(self, io, model=None):
+    self.model = model
+    self.io = io
+    self.renderer(self.io, model)
 
-    # Compile this code
-    if debug:
-      print code
-    block = compile(code, "view", "exec")
-    exec(block)
-
-    # Bind the render function to this instance
-    self._render = MethodType(template, self)
-
+  ## Methods below here are expected to be called from within the template
   def tmpl(self, file, submodel=None):
     tmplModel = submodel if submodel is not None else self.model
-    # Render this template into our io
-    viewloader.loadfile(file)._render(self.io, tmplModel)
+    with open(file) as f:
+      view = ParseView(f.read(), self.ignore_whitespace)
+      view.RenderTo(self.io, tmplModel)
 
   def wrap(self, file):
     # TODO(alusco): Wrap the template
@@ -47,13 +65,6 @@ class View(object):
     # TODO(alusco): print out a wrapped body
     raise NotImplementedError("Body isn't implemented yet")
 
-  def render(self, model=None):
-    self.model = model
-    self.io = StringIO()
-    self._render(self.io, model)
-    template_data = self.io.getvalue()
-    self.io.close()
-    return template_data
 
 class ViewIO(StringIO):
   """Subclass of StringIO which can write a line"""
@@ -84,7 +95,9 @@ class ViewIO(StringIO):
     if text[-1] != '\n':
       self.write('\n')
 
+
 class ViewBuilder(object):
+
   def __init__(self, scope):
     self.buffer = ViewIO()
     self.cache = None
@@ -176,3 +189,15 @@ class ViewBuilder(object):
     if not self.cache:
       self.cache = self.buffer.getvalue()
       self.buffer.close()
+
+  def Build(self):
+    # Build our code and indent it one
+    code = self.getTemplate()
+
+    # Compile this code
+    logging.debug('Parsed code: %s', code)
+    block = compile(code, "view", "exec")
+    exec(block)
+
+    # Builds a method which can render a template
+    return template

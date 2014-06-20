@@ -24,7 +24,7 @@ def bind(handler):
 class RazorLexer(object):
   """Encapsulates the razor token logic"""
   @staticmethod
-  def create(ignore_whitespace = False):
+  def create(ignore_whitespace=False):
     """Creates the rules bound to a new lexer instance"""
     lex = RazorLexer(ignore_whitespace)
     lex.rules = (

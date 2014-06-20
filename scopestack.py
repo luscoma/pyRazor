@@ -66,6 +66,7 @@ class IndentStack(object):
       # This was a case where a multiline token has no 
       self.markHandler()
 
+
 class ScopeStack(object):
   """
   Manages scope based on tokens on top of an indentstack.
