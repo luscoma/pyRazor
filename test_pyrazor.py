@@ -133,7 +133,7 @@ class RenderTests(unittest.TestCase):
     file = tempfile.NamedTemporaryFile(delete=False)
     path = file.name
     try:
-      file.write(template)
+      file.write(bytes(template , 'UTF-8'))
       file.close()
       return path
     except:

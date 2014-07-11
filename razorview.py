@@ -7,7 +7,7 @@ import lex
 import types
 
 from lex import Token
-from StringIO import StringIO
+from io import StringIO
 
   
 def ParseView(text, ignore_whitespace):
@@ -197,7 +197,7 @@ class ViewBuilder(object):
     # Compile this code
     logging.debug('Parsed code: %s', code)
     block = compile(code, "view", "exec")
-    exec(block)
+    exec(block,globals(),locals())
 
     # Builds a method which can render a template
-    return template
+    return locals()['template']

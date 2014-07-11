@@ -56,14 +56,12 @@ class _InputScanner(object):
     """
     return self
 
-  def next(self):
-    """ Used for iteration. It returns token after token until there
-        are no more tokens. (change this to __next__(self) if using Py3.0)
-    """
+  def __next__(self):
     value = self._next()
     while value[1] is None:
       value = self._next()
     return value
+
 
   def _next(self):
     if not self.done_scanning():

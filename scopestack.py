@@ -53,7 +53,7 @@ class IndentStack(object):
 
   def _tryPopHandler(self, indent):
     """Attempts to pop any scope handlers"""
-    if self.handlers.has_key(indent):
+    if indent in self.handlers:
       self.handlers.pop(indent)()
 
   def _pushIndentation(self, indent):
