@@ -6,6 +6,8 @@ import logging
 import lex
 import types
 
+import ViewLoader
+
 from lex import Token
 from io import StringIO
 
@@ -48,22 +50,26 @@ class View(object):
 
   ## Methods below here are expected to be called from within the template
   def tmpl(self, file, submodel=None):
+    # TODO(hoseinyeganloo@gmail.com): print out layout
     tmplModel = submodel if submodel is not None else self.model
-    with open(file) as f:
-      view = ParseView(f.read(), self.ignore_whitespace)
-      view.RenderTo(self.io, tmplModel)
+    #with open(file) as f:
+    view = ParseView(ViewLoader.ViewLoader.View(file), self.ignore_whitespace)
+    view.RenderTo(self.io, tmplModel)
 
-  def wrap(self, file):
-    # TODO(alusco): Wrap the template
-    raise NotImplementedError("Wraps not implemented yet")
+  def wrap(self, file, submodel=None):
+    chModel = submodel if submodel is not None else self.model
+    #with open(file) as f:
+    view = ParseView(ViewLoader.ViewLoader.View(file), self.ignore_whitespace)
+    view.RenderTo(self.io, chModel)
 
   def section(self, name):
     # TODO(alusco): Output a section
     raise NotImplementedError("Section isn't implemented yet")
 
   def body(self):
-    # TODO(alusco): print out a wrapped body
+    # TODO(hoseinyeganloo@gmail.com): print out a wrapped body
     raise NotImplementedError("Body isn't implemented yet")
+
 
 
 class ViewIO(StringIO):

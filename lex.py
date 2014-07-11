@@ -16,6 +16,7 @@ class Token:
   CODE = "CODE"
   NEWLINE = "NEWLINE"
   INDENT = "INDENT"
+  VIEW = "VIEW"
 
 def bind(handler):
   """Simple binding function"""

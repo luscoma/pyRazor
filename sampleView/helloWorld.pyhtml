@@ -1,0 +1,8 @@
+<html>
+    <head>
+        <title>@model</title>
+    </head>
+    <body>
+        <p>@model</p>
+    </body>
+</html>
