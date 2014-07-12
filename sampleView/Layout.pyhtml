@@ -4,6 +4,6 @@
     </head>
     <body>
         <p>@model</p>
-        @view.wrap('sampleView/child.pyhtml')
+        @view.body()
     </body>
 </html>

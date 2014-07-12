@@ -6,7 +6,7 @@ import logging
 import lex
 import types
 
-import ViewLoader
+from ViewLoader import ViewLoader
 
 from lex import Token
 from io import StringIO
@@ -32,16 +32,26 @@ class View(object):
   """A razor view"""
   
   def __init__(self, builder, ignore_whitespace):
-    self.renderer = types.MethodType(
-        builder.Build(), self)
+    self.renderer = types.MethodType(builder.Build(), self)
     self.ignore_whitespace = ignore_whitespace
+    self.tmplFile = None
+    self.tmplModel = None
+    self.value = ''
+    self._body = ''
 
   def Render(self, model=None):
     io = StringIO()
     self.RenderTo(io, model)
-    value = io.getvalue()
+    self.value = io.getvalue()
     io.close()
-    return value
+    if(self.tmplFile != None):
+        view = ParseView(ViewLoader.Load(self.tmplFile), self.ignore_whitespace)
+        self.value = view._tmplRender(self.value,self.tmplModel)
+    return self.value
+
+  def _tmplRender(self,body,model=None):
+      self._body = body
+      return self.Render(model)
 
   def RenderTo(self, io, model=None):
     self.model = model
@@ -50,25 +60,20 @@ class View(object):
 
   ## Methods below here are expected to be called from within the template
   def tmpl(self, file, submodel=None):
-    # TODO(hoseinyeganloo@gmail.com): print out layout
-    tmplModel = submodel if submodel is not None else self.model
-    #with open(file) as f:
-    view = ParseView(ViewLoader.ViewLoader.View(file), self.ignore_whitespace)
-    view.RenderTo(self.io, tmplModel)
+    self.tmplModel = submodel if submodel is not None else self.model
+    self.tmplFile = file
 
   def wrap(self, file, submodel=None):
     chModel = submodel if submodel is not None else self.model
-    #with open(file) as f:
-    view = ParseView(ViewLoader.ViewLoader.View(file), self.ignore_whitespace)
-    view.RenderTo(self.io, chModel)
+    view = ParseView(ViewLoader.Load(file), self.ignore_whitespace)
+    view.RenderTo(self.io,chModel)
 
   def section(self, name):
     # TODO(alusco): Output a section
     raise NotImplementedError("Section isn't implemented yet")
 
   def body(self):
-    # TODO(hoseinyeganloo@gmail.com): print out a wrapped body
-    raise NotImplementedError("Body isn't implemented yet")
+    self.io.write(self._body)
 
 
 

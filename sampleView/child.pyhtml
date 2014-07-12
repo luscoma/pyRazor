@@ -1,4 +1,4 @@
-@#view.tmpl('sampleView/Layout.pyhtml')
+@view.tmpl('sampleView/Layout.pyhtml')
 <h1>
     @model
 </h1>

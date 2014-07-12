@@ -11,8 +11,8 @@ class ViewLoader:
         pass
 
     @staticmethod
-    def View(name,reload = False):
-        if name in ViewLoader.__views__.keys() or reload:
+    def Load(name,refresh = False):
+        if name in ViewLoader.__views__.keys() or refresh:
             return ViewLoader.__views__[name]
         else:
             #try:
