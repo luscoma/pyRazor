@@ -34,20 +34,21 @@ class View(object):
   def __init__(self, builder, ignore_whitespace):
     self.renderer = types.MethodType(builder.Build(), self)
     self.ignore_whitespace = ignore_whitespace
-    self.tmplFile = None
-    self.tmplModel = None
-    self.value = ''
+    self._tmplFile = None
+    self._tmplModel = None
+    self._value = ''
     self._body = ''
+    self._Section = dict()
 
   def Render(self, model=None):
     io = StringIO()
     self.RenderTo(io, model)
-    self.value = io.getvalue()
+    self._value = io.getvalue()
     io.close()
-    if(self.tmplFile != None):
-        view = ParseView(ViewLoader.Load(self.tmplFile), self.ignore_whitespace)
-        self.value = view._tmplRender(self.value,self.tmplModel)
-    return self.value
+    if(self._tmplFile != None):
+        view = ParseView(ViewLoader.Load(self._tmplFile), self.ignore_whitespace)
+        self._value = view._tmplRender(self._value,self._tmplModel)
+    return self._value
 
   def _tmplRender(self,body,model=None):
       self._body = body
@@ -60,8 +61,8 @@ class View(object):
 
   ## Methods below here are expected to be called from within the template
   def tmpl(self, file, submodel=None):
-    self.tmplModel = submodel if submodel is not None else self.model
-    self.tmplFile = file
+    self._tmplModel = submodel if submodel is not None else self.model
+    self._tmplFile = file
 
   def wrap(self, file, submodel=None):
     chModel = submodel if submodel is not None else self.model

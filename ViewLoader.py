@@ -1,5 +1,6 @@
 __author__ = 'hoseinyeganloo@gmail.com'
 
+import re
 
 class ViewLoader:
 
@@ -17,7 +18,7 @@ class ViewLoader:
         else:
             #try:
                 f = open(name)
-                ViewLoader.__views__[name] = f.read()
+                ViewLoader.__views__[name] = re.sub("@#.*#@","",f.read(),flags= re.S)
                 f.close()
                 return ViewLoader.__views__[name]
             #except:

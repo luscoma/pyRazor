@@ -2,7 +2,10 @@
     <head>
         <title>@model</title>
     </head>
-    <body>
+    <body>@#
+        @if False:
+            123
+            321#@
         <p>@model</p>
         @view.body()
     </body>

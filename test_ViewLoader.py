@@ -16,7 +16,6 @@ class MyTestCase(unittest.TestCase):
     def test_Render(self):
         ref = open('sampleView/child.html')
         self.assertEqual(ref.read(),pyrazor.Render(ViewLoader.Load('sampleView/child.pyhtml'),'Hello World',False))
-        #print(pyrazor.Render(ViewLoader.ViewLoader.View('sampleView/Layout.pyhtml'),'Hello World',False))
 
 
 if __name__ == '__main__':

@@ -47,7 +47,7 @@ class _InputScanner(object):
     self.lexer = lexer
     self.input = input
     self.ignoreRules = False
-    self.regex_line = re.compile(".+$", re.MULTILINE)
+    self.regex_line = re.compile(".+$", re.MULTILINE )
 
   def __iter__(self):
     """ All of the code for iteration is controlled by the class itself.

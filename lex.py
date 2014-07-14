@@ -31,10 +31,9 @@ class RazorLexer(object):
     lex.rules = (
         (Token.NEWLINE, (r"[\r]?[\n][ \t]*", bind(lex.newline))),
         (Token.ESCAPED, (r"@@", bind(lex.escaped))),
-        (Token.COMMENT, (r"@#.*#@", bind(lex.comment))),
-        (Token.LINECOMMENT, (r"@#.*$", bind(lex.linecomment))),
+        (Token.LINECOMMENT, (r"@#.*?$", bind(lex.linecomment))),
         (Token.ONELINE, (r"@(?:import|from|model) .+$", bind(lex.oneline))),
-        (Token.MULTILINE, (r"@\w*.*:$", bind(lex.multiline))),
+        (Token.MULTILINE, (r"@\w*.*[^$].*?:$", bind(lex.multiline))),
         (Token.PARENEXPRESSION, (r"@!?\(", bind(lex.paren_expression))),
         (Token.EXPRESSION, (r"@!?(\w+(?:(?:\[.+\])|(?:\(.*\)))?(?:\.[a-zA-Z]+(?:(?:\[.+\])|(?:\(.*\)))?)*)", bind(lex.expression))),
         (Token.TEXT, (r"[^@\r\n]+", bind(lex.text))),
@@ -120,10 +119,6 @@ class RazorLexer(object):
       return "isinstance(model, " + token[token.rindex(' '):] + ")"
     else:
       return token[1:]
-
-  def comment(self, scanner, token):
-    """Ignores inline comments returning None"""
-    return None
 
   def linecomment(self, scanner, token):
     """Ignores comments by returning None"""
