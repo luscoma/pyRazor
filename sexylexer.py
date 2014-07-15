@@ -45,7 +45,7 @@ class _InputScanner(object):
     """
     self._position = 0
     self.lexer = lexer
-    self.input = input
+    self.input = re.sub("@#.*#@","",input,flags= re.S)
     self.ignoreRules = False
     self.regex_line = re.compile(".+$", re.MULTILINE )
 
