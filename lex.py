@@ -16,7 +16,7 @@ class Token:
   CODE = "CODE"
   NEWLINE = "NEWLINE"
   INDENT = "INDENT"
-  VIEW = "VIEW"
+
 
 def bind(handler):
   """Simple binding function"""
@@ -31,14 +31,18 @@ class RazorLexer(object):
     lex.rules = (
         (Token.NEWLINE, (r"[\r]?[\n][ \t]*", bind(lex.newline))),
         (Token.ESCAPED, (r"@@", bind(lex.escaped))),
-        (Token.LINECOMMENT, (r"@#.*?$", bind(lex.linecomment))),
+        (Token.LINECOMMENT, (r"@#.*$", bind(lex.linecomment))),
         (Token.ONELINE, (r"@(?:import|from|model) .+$", bind(lex.oneline))),
-        (Token.MULTILINE, (r"@\w*.*[^$].*?:$", bind(lex.multiline))),
+        (Token.MULTILINE, (r"@\w*.*:$", bind(lex.multiline))),
         (Token.PARENEXPRESSION, (r"@!?\(", bind(lex.paren_expression))),
         (Token.EXPRESSION, (r"@!?(\w+(?:(?:\[.+\])|(?:\(.*\)))?(?:\.[a-zA-Z]+(?:(?:\[.+\])|(?:\(.*\)))?)*)", bind(lex.expression))),
         (Token.TEXT, (r"[^@\r\n]+", bind(lex.text))),
     )
-    lex.lexer = sexylexer.Lexer(lex.rules)
+    lex.multilineRules = (
+        (Token.NEWLINE, (r"[\r]?[\n][ \t]*", bind(lex.newline))),
+        (Token.CODE, (r"[^@\r\n]+", bind(lex.text))),
+    )
+    lex.lexer = sexylexer.Lexer(lex.rules,lex.multilineRules)
     return lex
 
   def __init__(self, ignore_whitespace):
@@ -90,6 +94,7 @@ class RazorLexer(object):
       #TODO(alusco): Actually implement multiple rules instead of this
       #sketchy situation here.
       scanner.ignoreRules = True
+
       def pop_multiline():
         scanner.ignoreRules = False
       self.scope.indentstack.markScope(pop_multiline)

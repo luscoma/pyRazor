@@ -47,7 +47,7 @@ class _InputScanner(object):
     self.lexer = lexer
     self.input = re.sub("@#.*#@","",input,flags= re.S)
     self.ignoreRules = False
-    self.regex_line = re.compile(".+$", re.MULTILINE )
+    #self.regex_line = re.compile("(?P<CODE>.+$)|(?P<NEWLINE>[\r]?[\n][ \t]*)", re.MULTILINE )
 
   def __iter__(self):
     """ All of the code for iteration is controlled by the class itself.
@@ -84,9 +84,14 @@ class _InputScanner(object):
 
     # If ignore rules
     if self.ignoreRules:
-      match = self.regex_line.match(self.input, self._position)
+      match = self.lexer.regex_line.match(self.input, self._position)
       self._position = match.end()
-      return "CODE", match.group().lstrip(' \t')
+      value = match.group(match.lastgroup)
+      value = self.lexer._mcallbacks[match.lastgroup](self, value)
+      if(match.lastgroup == "CODE"):
+        return match.lastgroup, match.group().lstrip(' \t')
+      else:
+        return match.lastgroup,""
 
     # Try to match a token
     match = self.lexer.regexc.match(self.input, self._position)
@@ -113,23 +118,33 @@ class Lexer(object):
       tokens one-by-one. It is meant to be used through iterating.
   """
 
-  def __init__(self, rules, case_sensitive=False):
+  def __init__(self, rules, mrules, case_sensitive=False):
     """ Set up the lexical scanner. Build and compile the regular expression
         and prepare the whitespace searcher.
     """
     self._callbacks = {}
+    self._mcallbacks = {}
     self.case_sensitive = case_sensitive
     parts = []
+    mparts = []
     for name, rule in rules:
       if not isinstance(rule, str):
         rule, callback = rule
         self._callbacks[name] = callback
       parts.append("(?P<%s>%s)" % (name, rule))
+
+    for name, mrule in mrules:
+      if not isinstance(mrule, str):
+        mrule, callback = mrule
+        self._mcallbacks[name] = callback
+      mparts.append("(?P<%s>%s)" % (name, mrule))
+
     if self.case_sensitive:
       flags = re.M
     else:
       flags = re.M|re.I
 
+    self.regex_line = re.compile("|".join(mparts), flags)
     self.regexc = re.compile("|".join(parts), flags)
 
   def scan(self, input):

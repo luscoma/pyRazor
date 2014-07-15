@@ -2,10 +2,13 @@
     <head>
         <title>@model</title>
     </head>
-    <body>@#
-        @if False:
-            123
-            321#@
+    <body>
+@helper test():
+          @:
+            a = 123
+            b = 321
+            return a+b
+        @test()
         <p>@model</p>
         @view.body()
     </body>

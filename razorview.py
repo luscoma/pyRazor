@@ -51,6 +51,7 @@ class View(object):
     return self._value
 
   def _tmplRender(self,body,model=None):
+      """ Render view as a template(layout). this method enables body method! """
       self._body = body
       return self.Render(model)
 
