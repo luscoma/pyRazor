@@ -40,6 +40,7 @@ class RazorLexer(object):
     )
     lex.multilineRules = (
         (Token.NEWLINE, (r"[\r]?[\n][ \t]*", bind(lex.newline))),
+        (Token.MULTILINE, (r"\w*.*:$", bind(lex.multiline))),
         (Token.CODE, (r"[^@\r\n]+", bind(lex.text))),
     )
     lex.lexer = sexylexer.Lexer(lex.rules,lex.multilineRules)
@@ -97,6 +98,7 @@ class RazorLexer(object):
 
       def pop_multiline():
         scanner.ignoreRules = False
+
       self.scope.indentstack.markScope(pop_multiline)
       # We have to move past the end of line (this is a special case)
       # $ matches at the end of a line so it should be just +1
@@ -107,7 +109,7 @@ class RazorLexer(object):
       if token.lower().startswith("@helper"):
         token = token.lower().replace("helper", "def", 1)
       self.scope.enterScope()
-      return token[1:]
+      return token.lstrip('@')
 
   def escaped(self, scanner, token):
     """Escapes the @ token directly"""

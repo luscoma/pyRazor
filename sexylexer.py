@@ -91,7 +91,7 @@ class _InputScanner(object):
       if(match.lastgroup == "CODE"):
         return match.lastgroup, match.group().lstrip(' \t')
       else:
-        return match.lastgroup,""
+        return match.lastgroup,value
 
     # Try to match a token
     match = self.lexer.regexc.match(self.input, self._position)
