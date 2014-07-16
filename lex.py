@@ -10,12 +10,14 @@ class Token:
   LINECOMMENT = "LINECOMMENT"
   ONELINE = "ONELINE"
   MULTILINE = "MULTILINE"
+  EXPLICITMULTILINEEND = "EXPLICITMULTILINEEND"
   PARENEXPRESSION = "PARENEXPRESSION"
   EXPRESSION = "EXPRESSION"
   TEXT = "TEXT"
   CODE = "CODE"
   NEWLINE = "NEWLINE"
   INDENT = "INDENT"
+  EMPTYLINE = "EMPTYLINE"
 
 
 def bind(handler):
@@ -39,6 +41,8 @@ class RazorLexer(object):
         (Token.TEXT, (r"[^@\r\n]+", bind(lex.text))),
     )
     lex.multilineRules = (
+        (Token.EMPTYLINE, (r"[\r]?[\n][ \t]*$", bind(lex.empty_line))),
+        (Token.EXPLICITMULTILINEEND, (r"[\r]?[\n][ \t]*\w*.*:@", bind(lex.multiline_end))),
         (Token.NEWLINE, (r"[\r]?[\n][ \t]*", bind(lex.newline))),
         (Token.MULTILINE, (r"\w*.*:$", bind(lex.multiline))),
         (Token.CODE, (r"[^@\r\n]+", bind(lex.text))),
@@ -111,6 +115,11 @@ class RazorLexer(object):
       self.scope.enterScope()
       return token.lstrip('@')
 
+  def multiline_end(self,scanner,token):
+      scanner.ignoreRules = False
+      scanner._position +=1
+      return token.rstrip(':@')
+
   def escaped(self, scanner, token):
     """Escapes the @ token directly"""
     return "@"
@@ -145,3 +154,7 @@ class RazorLexer(object):
     if self.ignore_whitespace:
       return ""
     return token[self.scope.indentstack.getScopeIndentation():]
+
+  def empty_line(self,scanner,token):
+    #Ignore empty line
+    return ""

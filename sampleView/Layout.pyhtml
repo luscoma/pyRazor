@@ -11,9 +11,9 @@
                 a = 321
             else:
                 if True:
-                    a = 111
-                    b = 222
-
+                    a = '111'
+                    b = '222'
+:@
             return a+b
         @test()
         <p>@model</p>
