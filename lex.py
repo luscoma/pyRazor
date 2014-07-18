@@ -18,6 +18,9 @@ class Token:
   NEWLINE = "NEWLINE"
   INDENT = "INDENT"
   EMPTYLINE = "EMPTYLINE"
+  XMLSTART = "XMLSTART"
+  XMLEND = "XMLEND"
+  XMLSELFCLOSE = "XMLSELFCLOSE"
 
 
 def bind(handler):
@@ -38,6 +41,9 @@ class RazorLexer(object):
         (Token.MULTILINE, (r"@\w*.*:$", bind(lex.multiline))),
         (Token.PARENEXPRESSION, (r"@!?\(", bind(lex.paren_expression))),
         (Token.EXPRESSION, (r"@!?(\w+(?:(?:\[.+\])|(?:\(.*\)))?(?:\.[a-zA-Z]+(?:(?:\[.+\])|(?:\(.*\)))?)*)", bind(lex.expression))),
+        (Token.XMLSTART, (r"[\r]?[\n][ \t]*<\w[^@\r\n]*", bind(lex.xmlStart))),
+        (Token.XMLEND, (r"[ \t]*</[^@\r\n]+>", bind(lex.xmlEnd))),
+        (Token.XMLSELFCLOSE, (r"[^@]+/>[ \t]*", bind(lex.xmlSelfClose))),
         (Token.TEXT, (r"[^@\r\n]+", bind(lex.text))),
     )
     lex.multilineRules = (
@@ -45,6 +51,9 @@ class RazorLexer(object):
         (Token.EXPLICITMULTILINEEND, (r"[\r]?[\n][ \t]*\w*.*:@", bind(lex.multiline_end))),
         (Token.NEWLINE, (r"[\r]?[\n][ \t]*", bind(lex.newline))),
         (Token.MULTILINE, (r"\w*.*:$", bind(lex.multiline))),
+        (Token.XMLSTART, (r"[ \t]*<\w[^@\r\n]*", bind(lex.xmlStart))),
+        (Token.XMLEND, (r"[ \t]*</[^@\r\n]+>", bind(lex.xmlEnd))),
+        (Token.XMLSELFCLOSE, (r"[^@]+/>[ \t]*", bind(lex.xmlSelfClose))),
         (Token.CODE, (r"[^@\r\n]+", bind(lex.text))),
     )
     lex.lexer = sexylexer.Lexer(lex.rules,lex.multilineRules)
@@ -53,6 +62,7 @@ class RazorLexer(object):
   def __init__(self, ignore_whitespace):
     self.scope = ScopeStack(ignore_whitespace)
     self.ignore_whitespace = ignore_whitespace
+    self.Mode = []
 
   def scan(self, text):
     """Tokenize an input string"""
@@ -64,6 +74,22 @@ class RazorLexer(object):
   def shouldEscape(self, token):
     """Returns false if this token should not be html escaped"""
     return token[1] != '!'
+
+  def xmlStart(self, scanner, token):
+      # ToDo by (hoseinyeganloo@gmail.com) : test
+      self.pushMode(scanner)
+      scanner.Mode = sexylexer.ScannerMode.Text
+      return token.replace("'","\\'")
+
+  def xmlEnd(self, scanner,token):
+      # ToDo by (hoseinyeganloo@gmail.com) : test
+      self.popMode(scanner)
+      return token.replace("'","\\'")
+
+  def xmlSelfClose(self, scanner,token):
+      # ToDo by (hoseinyeganloo@gmail.com) : test
+      self.popMode(scanner)
+      return token.replace("'","\\'")
 
   def paren_expression(self, scanner, token):
     """Performs paren matching to find the end of a parenthesis expression"""
@@ -97,11 +123,13 @@ class RazorLexer(object):
     """Handles multiline expressions"""
     if token == "@:":
       #TODO(alusco): Actually implement multiple rules instead of this
+      self.Mode.append(sexylexer.ScannerMode.Text)
+
       #sketchy situation here.
-      scanner.ignoreRules = True
+      scanner.Mode = sexylexer.ScannerMode.CODE
 
       def pop_multiline():
-        scanner.ignoreRules = False
+        self.popMode(scanner)
 
       self.scope.indentstack.markScope(pop_multiline)
       # We have to move past the end of line (this is a special case)
@@ -116,7 +144,8 @@ class RazorLexer(object):
       return token.lstrip('@')
 
   def multiline_end(self,scanner,token):
-      scanner.ignoreRules = False
+      scanner.Mode = sexylexer.ScannerMode.Text
+      self.popMode(scanner)
       scanner._position +=1
       return token.rstrip(':@')
 
@@ -157,4 +186,12 @@ class RazorLexer(object):
 
   def empty_line(self,scanner,token):
     #Ignore empty line
-    return ""
+    return None
+
+  def popMode(self,scanner):
+      if len(self.Mode) > 0:
+          scanner.Mode = self.Mode.pop()
+
+  def pushMode(self,scanner):
+      if len(self.Mode) > 0 or scanner.Mode == sexylexer.ScannerMode.CODE:
+          self.Mode.append(scanner.Mode)

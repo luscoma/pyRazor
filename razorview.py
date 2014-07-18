@@ -78,7 +78,6 @@ class View(object):
     self.io.write(self._body)
 
 
-
 class ViewIO(StringIO):
   """Subclass of StringIO which can write a line"""
 
@@ -127,7 +126,7 @@ class ViewBuilder(object):
 
   def writeCode(self, code):
     """Writes a line of code to the view buffer"""
-    self.buffer.scopeline(code)
+    self.buffer.scopeline(code.lstrip(' \t'))
 
   def writeText(self, token):
     """Writes a token to the view buffer"""
@@ -141,9 +140,9 @@ class ViewBuilder(object):
     self.maybePrintIndent()
     self.buffer.writescope("__e = ")
     self.buffer.writeline(expression)
-    self.buffer.scopeline("if __e != 'None':")
+    self.buffer.scopeline("if __e != None and __e != 'None':")
     self.buffer.scope += 1
-    self.buffer.scopeline("__io.write(__e)")
+    self.buffer.scopeline("__io.write(str(__e))")
     # We rely on a hack in maybePrintNewline to determine
     # that the last token was an expression and to output the \n at scope+1
     self.buffer.scope -= 1
@@ -162,6 +161,12 @@ class ViewBuilder(object):
     elif token[0] == Token.ONELINE:
       self.writeCode(token[1])
     elif token[0] == Token.TEXT:
+      self.writeText(token[1])
+    elif token[0] == Token.XMLSTART:
+      self.writeText(token[1])
+    elif token[0] == Token.XMLEND:
+      self.writeText(token[1])
+    elif token[0] == Token.XMLSELFCLOSE:
       self.writeText(token[1])
     elif token[0] == Token.PARENEXPRESSION:
       self.writeExpression(token[1])

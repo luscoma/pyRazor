@@ -33,6 +33,10 @@ class UnknownTokenError(TokenError):
   """
   pass
 
+class ScannerMode:
+    Text = "TEXT"
+    CODE = "CODE"
+
 class _InputScanner(object):
   """ This class manages the scanning of a specific input. An instance of it is
       returned when scan() is called. It is built to be great for iteration. This is
@@ -45,9 +49,9 @@ class _InputScanner(object):
     """
     self._position = 0
     self.lexer = lexer
-    self.input = re.sub("@#.*#@","",input,flags= re.S)
-    self.ignoreRules = False
-    #self.regex_line = re.compile("(?P<CODE>.+$)|(?P<NEWLINE>[\r]?[\n][ \t]*)", re.MULTILINE )
+    self.input = re.sub("@#.*#@", "", input, flags=re.S)
+    self.Mode = ScannerMode.Text
+
 
   def __iter__(self):
     """ All of the code for iteration is controlled by the class itself.
@@ -82,19 +86,12 @@ class _InputScanner(object):
     if self.done_scanning():
         return None
 
-    # If ignore rules
-    if self.ignoreRules:
-      match = self.lexer.regex_line.match(self.input, self._position)
-      self._position = match.end()
-      value = match.group(match.lastgroup)
-      value = self.lexer._mcallbacks[match.lastgroup](self, value)
-      if(match.lastgroup == "CODE"):
-        return match.lastgroup, match.group().lstrip(' \t')
-      else:
-        return match.lastgroup,value
-
     # Try to match a token
-    match = self.lexer.regexc.match(self.input, self._position)
+    if self.Mode == ScannerMode.CODE:
+      match = self.lexer.regex_line.match(self.input, self._position)
+    else:
+      match = self.lexer.regexc.match(self.input, self._position)
+
     if match is None:
       lineno = self.input[:self._position].count("\n") + 1
       raise UnknownTokenError(self.input[self._position], lineno)
