@@ -22,10 +22,9 @@
         <li id="@(i)">@!(x = i/2)</li>
         b = 3
         <li>@(b)</li>
-        <li>
-            @:
+        <li>@:
                 a= 43
-                <span>@a</span>
+                <span>a</span>
         </li>
 </ul>
         @test()

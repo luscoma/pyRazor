@@ -162,6 +162,8 @@ class ViewBuilder(object):
       self.writeCode(token[1])
     elif token[0] == Token.TEXT:
       self.writeText(token[1])
+    elif token[0] == Token.XMLFULLSTART:
+      self.writeText(token[1])
     elif token[0] == Token.XMLSTART:
       self.writeText(token[1])
     elif token[0] == Token.XMLEND:

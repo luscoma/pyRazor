@@ -19,6 +19,7 @@ class Token:
   INDENT = "INDENT"
   EMPTYLINE = "EMPTYLINE"
   XMLSTART = "XMLSTART"
+  XMLFULLSTART = "XMLFULLSTART"
   XMLEND = "XMLEND"
   XMLSELFCLOSE = "XMLSELFCLOSE"
 
@@ -34,9 +35,6 @@ class RazorLexer(object):
     """Creates the rules bound to a new lexer instance"""
     lex = RazorLexer(ignore_whitespace)
     lex.rules = (
-        (Token.XMLSTART, (r"[ \t]*<\w[^@\r\n>]*", bind(lex.xmlStart))),
-        (Token.XMLEND, (r"[ \t]*</[^@\r\n]+>", bind(lex.xmlEnd))),
-        (Token.XMLSELFCLOSE, (r"[^@]+/>[ \t]*", bind(lex.xmlSelfClose))),
         (Token.NEWLINE, (r"[\r]?[\n][ \t]*", bind(lex.newline))),
         (Token.ESCAPED, (r"@@", bind(lex.escaped))),
         (Token.LINECOMMENT, (r"@#.*$", bind(lex.linecomment))),
@@ -44,15 +42,20 @@ class RazorLexer(object):
         (Token.MULTILINE, (r"@\w*.*:$", bind(lex.multiline))),
         (Token.PARENEXPRESSION, (r"@!?\(", bind(lex.paren_expression))),
         (Token.EXPRESSION, (r"@!?(\w+(?:(?:\[.+\])|(?:\(.*\)))?(?:\.[a-zA-Z]+(?:(?:\[.+\])|(?:\(.*\)))?)*)", bind(lex.expression))),
+        (Token.XMLFULLSTART, (r"[ \t]*<\w[^@\r\n]*?>", bind(lex.xmlStart))),
+        (Token.XMLSTART, (r"[ \t]*<\w[^@\r\n>]*", bind(lex.xmlStart))),
+        (Token.XMLEND, (r"[ \t]*</[^@\r\n]+[>]", bind(lex.xmlEnd))),
+        (Token.XMLSELFCLOSE, (r"[^@]+/>[ \t]*", bind(lex.xmlSelfClose))),
         (Token.TEXT, (r"[^@\r\n]+", bind(lex.text))),
     )
     lex.multilineRules = (
         (Token.EMPTYLINE, (r"[\r]?[\n][ \t]*$", bind(lex.empty_line))),
         (Token.EXPLICITMULTILINEEND, (r"[\r]?[\n][ \t]*\w*.*:@", bind(lex.multiline_end))),
-        (Token.XMLSTART, (r"[\r]?[\n]?[ \t]*<\w[^@\r\n>]*", bind(lex.xmlStart))),
-        (Token.XMLEND, (r"[\r]?[\n]?[ \t]*</[^@\r\n]+>", bind(lex.xmlEnd))),
-        (Token.XMLSELFCLOSE, (r"[^@]+/>[ \t]*", bind(lex.xmlSelfClose))),
         (Token.NEWLINE, (r"[\r]?[\n][ \t]*", bind(lex.newline))),
+        (Token.XMLFULLSTART, (r"[ \t]*<\w[^@\r\n]*?>", bind(lex.xmlStart))),
+        (Token.XMLSTART, (r"[ \t]*<\w[^@\r\n>]*", bind(lex.xmlStart))),
+        (Token.XMLEND, (r"[ \t]*</[^@\r\n]+[>]", bind(lex.xmlEnd))),
+        (Token.XMLSELFCLOSE, (r"[^@]+/>[ \t]*", bind(lex.xmlSelfClose))),
         (Token.MULTILINE, (r"\w*.*:$", bind(lex.multiline))),
         (Token.CODE, (r"[^@\r\n]+", bind(lex.text))),
     )
@@ -63,6 +66,7 @@ class RazorLexer(object):
     self.scope = ScopeStack(ignore_whitespace)
     self.ignore_whitespace = ignore_whitespace
     self.Mode = []
+    self.NewLine = False
 
   def scan(self, text):
     """Tokenize an input string"""
@@ -79,17 +83,26 @@ class RazorLexer(object):
       # ToDo by (hoseinyeganloo@gmail.com) : test
       self.pushMode(scanner)
       scanner.Mode = sexylexer.ScannerMode.Text
-      return token.replace("'","\\'").replace("\n","\\n").replace("\r","\\r")
+      if self.NewLine:
+          self.NewLine = False
+          return self.scope.indentstack.getScopeIndentation()[0]+token.replace("'", "\\'")
+      return token.replace("'", "\\'")
 
   def xmlEnd(self, scanner,token):
       # ToDo by (hoseinyeganloo@gmail.com) : test
       self.popMode(scanner)
-      return token.replace("'","\\'").replace("\n","\\n").replace("\r","\\r")
+      if self.NewLine:
+          self.NewLine = False
+          return self.scope.indentstack.getScopeIndentation()[0]+token.replace("'", "\\'")
+      return token.replace("'", "\\'")
 
   def xmlSelfClose(self, scanner,token):
       # ToDo by (hoseinyeganloo@gmail.com) : test
       self.popMode(scanner)
-      return token.replace("'","\\'").replace("\n","\\n").replace("\r","\\r")
+      if self.NewLine:
+          self.NewLine = False
+          return self.scope.indentstack.getScopeIndentation()[0]+token.replace("'", "\\'")
+      return token.replace("'", "\\'")
 
   def paren_expression(self, scanner, token):
     """Performs paren matching to find the end of a parenthesis expression"""
@@ -177,12 +190,13 @@ class RazorLexer(object):
 
   def newline(self, scanner, token):
     """Handles indention scope"""
+    self.NewLine = True
     nline = token.index('\n')+1
     token = token[nline:]
-    self.scope.handleIndentation(len(token))
+    self.scope.handleIndentation(token)
     if self.ignore_whitespace:
       return ""
-    return token[self.scope.indentstack.getScopeIndentation():]
+    return token[self.scope.indentstack.getScopeIndentation()[1]:]
 
   def empty_line(self,scanner,token):
     #Ignore empty line
