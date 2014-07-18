@@ -25,7 +25,7 @@
         <li>
             @:
                 a= 43
-                <span>a</span>
+                <span>@a</span>
         </li>
 </ul>
         @test()

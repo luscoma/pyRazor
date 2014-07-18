@@ -34,6 +34,9 @@ class RazorLexer(object):
     """Creates the rules bound to a new lexer instance"""
     lex = RazorLexer(ignore_whitespace)
     lex.rules = (
+        (Token.XMLSTART, (r"[ \t]*<\w[^@\r\n>]*", bind(lex.xmlStart))),
+        (Token.XMLEND, (r"[ \t]*</[^@\r\n]+>", bind(lex.xmlEnd))),
+        (Token.XMLSELFCLOSE, (r"[^@]+/>[ \t]*", bind(lex.xmlSelfClose))),
         (Token.NEWLINE, (r"[\r]?[\n][ \t]*", bind(lex.newline))),
         (Token.ESCAPED, (r"@@", bind(lex.escaped))),
         (Token.LINECOMMENT, (r"@#.*$", bind(lex.linecomment))),
@@ -41,19 +44,16 @@ class RazorLexer(object):
         (Token.MULTILINE, (r"@\w*.*:$", bind(lex.multiline))),
         (Token.PARENEXPRESSION, (r"@!?\(", bind(lex.paren_expression))),
         (Token.EXPRESSION, (r"@!?(\w+(?:(?:\[.+\])|(?:\(.*\)))?(?:\.[a-zA-Z]+(?:(?:\[.+\])|(?:\(.*\)))?)*)", bind(lex.expression))),
-        (Token.XMLSTART, (r"[\r]?[\n][ \t]*<\w[^@\r\n]*", bind(lex.xmlStart))),
-        (Token.XMLEND, (r"[ \t]*</[^@\r\n]+>", bind(lex.xmlEnd))),
-        (Token.XMLSELFCLOSE, (r"[^@]+/>[ \t]*", bind(lex.xmlSelfClose))),
         (Token.TEXT, (r"[^@\r\n]+", bind(lex.text))),
     )
     lex.multilineRules = (
         (Token.EMPTYLINE, (r"[\r]?[\n][ \t]*$", bind(lex.empty_line))),
         (Token.EXPLICITMULTILINEEND, (r"[\r]?[\n][ \t]*\w*.*:@", bind(lex.multiline_end))),
+        (Token.XMLSTART, (r"[\r]?[\n]?[ \t]*<\w[^@\r\n>]*", bind(lex.xmlStart))),
+        (Token.XMLEND, (r"[\r]?[\n]?[ \t]*</[^@\r\n]+>", bind(lex.xmlEnd))),
+        (Token.XMLSELFCLOSE, (r"[^@]+/>[ \t]*", bind(lex.xmlSelfClose))),
         (Token.NEWLINE, (r"[\r]?[\n][ \t]*", bind(lex.newline))),
         (Token.MULTILINE, (r"\w*.*:$", bind(lex.multiline))),
-        (Token.XMLSTART, (r"[ \t]*<\w[^@\r\n]*", bind(lex.xmlStart))),
-        (Token.XMLEND, (r"[ \t]*</[^@\r\n]+>", bind(lex.xmlEnd))),
-        (Token.XMLSELFCLOSE, (r"[^@]+/>[ \t]*", bind(lex.xmlSelfClose))),
         (Token.CODE, (r"[^@\r\n]+", bind(lex.text))),
     )
     lex.lexer = sexylexer.Lexer(lex.rules,lex.multilineRules)
@@ -79,17 +79,17 @@ class RazorLexer(object):
       # ToDo by (hoseinyeganloo@gmail.com) : test
       self.pushMode(scanner)
       scanner.Mode = sexylexer.ScannerMode.Text
-      return token.replace("'","\\'")
+      return token.replace("'","\\'").replace("\n","\\n").replace("\r","\\r")
 
   def xmlEnd(self, scanner,token):
       # ToDo by (hoseinyeganloo@gmail.com) : test
       self.popMode(scanner)
-      return token.replace("'","\\'")
+      return token.replace("'","\\'").replace("\n","\\n").replace("\r","\\r")
 
   def xmlSelfClose(self, scanner,token):
       # ToDo by (hoseinyeganloo@gmail.com) : test
       self.popMode(scanner)
-      return token.replace("'","\\'")
+      return token.replace("'","\\'").replace("\n","\\n").replace("\r","\\r")
 
   def paren_expression(self, scanner, token):
     """Performs paren matching to find the end of a parenthesis expression"""
