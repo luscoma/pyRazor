@@ -2,6 +2,7 @@
 import sexylexer
 import cgi
 from scopestack import ScopeStack
+import re
 
 class Token:
   """Simple list of token names"""
@@ -22,6 +23,7 @@ class Token:
   XMLFULLSTART = "XMLFULLSTART"
   XMLEND = "XMLEND"
   XMLSELFCLOSE = "XMLSELFCLOSE"
+  PRINTLINE = "PRINTLINE"
 
 
 def bind(handler):
@@ -46,7 +48,7 @@ class RazorLexer(object):
         (Token.XMLSTART, (r"[ \t]*<\w[^@\r\n>]*", bind(lex.xmlStart))),
         (Token.XMLEND, (r"[ \t]*</[^@\r\n]+[>]", bind(lex.xmlEnd))),
         (Token.XMLSELFCLOSE, (r"[^@]+/>[ \t]*", bind(lex.xmlSelfClose))),
-        (Token.TEXT, (r"[^@\r\n]+", bind(lex.text))),
+        (Token.TEXT, (r"[^@\r\n<]+", bind(lex.text))),
     )
     lex.multilineRules = (
         (Token.EMPTYLINE, (r"[\r]?[\n][ \t]*$", bind(lex.empty_line))),
@@ -57,7 +59,8 @@ class RazorLexer(object):
         (Token.XMLEND, (r"[ \t]*</[^@\r\n]+[>]", bind(lex.xmlEnd))),
         (Token.XMLSELFCLOSE, (r"[^@]+/>[ \t]*", bind(lex.xmlSelfClose))),
         (Token.MULTILINE, (r"\w*.*:$", bind(lex.multiline))),
-        (Token.CODE, (r"[^@\r\n]+", bind(lex.text))),
+        (Token.PRINTLINE, (r"[ \t]*print[ \t]*[(][ \t]*['\"].*[\"'][ \t]*[)]", bind(lex.printLine))),
+        (Token.CODE, (r".+", bind(lex.code))),
     )
     lex.lexer = sexylexer.Lexer(lex.rules,lex.multilineRules)
     return lex
@@ -80,24 +83,23 @@ class RazorLexer(object):
     return token[1] != '!'
 
   def xmlStart(self, scanner, token):
-      # ToDo by (hoseinyeganloo@gmail.com) : test
       self.pushMode(scanner)
       scanner.Mode = sexylexer.ScannerMode.Text
+      token = re.sub("[ \t]*<text>", "", token)
       if self.NewLine:
           self.NewLine = False
           return self.scope.indentstack.getScopeIndentation()[0]+token.replace("'", "\\'")
       return token.replace("'", "\\'")
 
-  def xmlEnd(self, scanner,token):
-      # ToDo by (hoseinyeganloo@gmail.com) : test
+  def xmlEnd(self, scanner, token):
       self.popMode(scanner)
+      token = re.sub("[ \t]*</text>", "", token)
       if self.NewLine:
           self.NewLine = False
           return self.scope.indentstack.getScopeIndentation()[0]+token.replace("'", "\\'")
       return token.replace("'", "\\'")
 
-  def xmlSelfClose(self, scanner,token):
-      # ToDo by (hoseinyeganloo@gmail.com) : test
+  def xmlSelfClose(self, scanner, token):
       self.popMode(scanner)
       if self.NewLine:
           self.NewLine = False
@@ -135,7 +137,6 @@ class RazorLexer(object):
   def multiline(self, scanner, token):
     """Handles multiline expressions"""
     if token == "@:":
-      #TODO(alusco): Actually implement multiple rules instead of this
       self.Mode.append(sexylexer.ScannerMode.Text)
 
       #sketchy situation here.
@@ -156,7 +157,7 @@ class RazorLexer(object):
       self.scope.enterScope()
       return token.lstrip('@')
 
-  def multiline_end(self,scanner,token):
+  def multiline_end(self,scanner, token):
       scanner.Mode = sexylexer.ScannerMode.Text
       self.popMode(scanner)
       scanner._position +=1
@@ -188,6 +189,18 @@ class RazorLexer(object):
     """Returns text escaped with ' escaped"""
     return token.replace("'","\\'")
 
+  def printLine(self, scanner, token):
+      self.popMode(scanner)
+      token = re.match("([ \t]*print[ \t]*[(][ \t]*['\"])(.*)([\"'][ \t]*[)])", token).group(2)
+      if self.NewLine:
+          self.NewLine = False
+          return self.scope.indentstack.getScopeIndentation()[0] + token
+      return token
+
+  def code(self, scanner, token):
+    """Returns text escaped with ' escaped"""
+    return token
+
   def newline(self, scanner, token):
     """Handles indention scope"""
     self.NewLine = True
@@ -198,7 +211,7 @@ class RazorLexer(object):
       return ""
     return token[self.scope.indentstack.getScopeIndentation()[1]:]
 
-  def empty_line(self,scanner,token):
+  def empty_line(self, scanner, token):
     #Ignore empty line
     return None
 

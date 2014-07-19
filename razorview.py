@@ -162,6 +162,8 @@ class ViewBuilder(object):
       self.writeCode(token[1])
     elif token[0] == Token.TEXT:
       self.writeText(token[1])
+    elif token[0] == Token.PRINTLINE:
+      self.writeText(token[1])
     elif token[0] == Token.XMLFULLSTART:
       self.writeText(token[1])
     elif token[0] == Token.XMLSTART:
@@ -218,6 +220,6 @@ class ViewBuilder(object):
     logging.debug('Parsed code: %s', code)
     block = compile(code, "view", "exec")
     exec(block,globals(),locals())
-
+    #ToDo by (hoseinyeganloo@gmail.com): create caching of template method
     # Builds a method which can render a template
     return locals()['template']

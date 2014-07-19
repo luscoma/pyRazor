@@ -2,7 +2,7 @@
     <head>
         <title>@model</title>
     </head>
-    <body>
+    <body>@#
 @helper test():
           @:
             a = 123
@@ -14,7 +14,7 @@
                     a = '111'
                     b = '222'
 
-            return a+b
+            return a+b#@
 <ul>
 @for i in [1,2,3,4,5]:
     @:
@@ -22,12 +22,15 @@
         <li id="@(i)">@!(x = i/2)</li>
         b = 3
         <li>@(b)</li>
-        <li>@:
+        <li>
+            @:
                 a= 43
                 <span>a</span>
+                print('print("hosein")')
+                <text>123</text>
         </li>
 </ul>
-        @test()
+        @#test()
         <p>@model</p>
         @view.body()
     </body>

@@ -120,7 +120,6 @@ class Lexer(object):
         and prepare the whitespace searcher.
     """
     self._callbacks = {}
-    self._mcallbacks = {}
     self.case_sensitive = case_sensitive
     parts = []
     mparts = []
@@ -133,7 +132,7 @@ class Lexer(object):
     for name, mrule in mrules:
       if not isinstance(mrule, str):
         mrule, callback = mrule
-        self._mcallbacks[name] = callback
+        self._callbacks[name] = callback
       mparts.append("(?P<%s>%s)" % (name, mrule))
 
     if self.case_sensitive:
