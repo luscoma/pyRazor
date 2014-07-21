@@ -34,22 +34,24 @@ class View(object):
   def __init__(self, builder, ignore_whitespace):
     self.renderer = types.MethodType(builder.Build(), self)
     self.ignore_whitespace = ignore_whitespace
-    self.tmplFile = None
-    self.tmplModel = None
-    self.value = ''
+    self._tmplFile = None
+    self._tmplModel = None
+    self._value = ''
     self._body = ''
+    self._Section = dict()
 
   def Render(self, model=None):
     io = StringIO()
     self.RenderTo(io, model)
-    self.value = io.getvalue()
+    self._value = io.getvalue()
     io.close()
-    if(self.tmplFile != None):
-        view = ParseView(ViewLoader.Load(self.tmplFile), self.ignore_whitespace)
-        self.value = view._tmplRender(self.value,self.tmplModel)
-    return self.value
+    if(self._tmplFile != None):
+        view = ParseView(ViewLoader.Load(self._tmplFile), self.ignore_whitespace)
+        self._value = view._tmplRender(self._value,self._tmplModel)
+    return self._value
 
   def _tmplRender(self,body,model=None):
+      """ Render view as a template(layout). this method enables body method! """
       self._body = body
       return self.Render(model)
 
@@ -60,8 +62,8 @@ class View(object):
 
   ## Methods below here are expected to be called from within the template
   def tmpl(self, file, submodel=None):
-    self.tmplModel = submodel if submodel is not None else self.model
-    self.tmplFile = file
+    self._tmplModel = submodel if submodel is not None else self.model
+    self._tmplFile = file
 
   def wrap(self, file, submodel=None):
     chModel = submodel if submodel is not None else self.model
@@ -74,7 +76,6 @@ class View(object):
 
   def body(self):
     self.io.write(self._body)
-
 
 
 class ViewIO(StringIO):
@@ -125,7 +126,7 @@ class ViewBuilder(object):
 
   def writeCode(self, code):
     """Writes a line of code to the view buffer"""
-    self.buffer.scopeline(code)
+    self.buffer.scopeline(code.lstrip(' \t'))
 
   def writeText(self, token):
     """Writes a token to the view buffer"""
@@ -139,9 +140,9 @@ class ViewBuilder(object):
     self.maybePrintIndent()
     self.buffer.writescope("__e = ")
     self.buffer.writeline(expression)
-    self.buffer.scopeline("if __e != 'None':")
+    self.buffer.scopeline("if __e != None and __e != 'None':")
     self.buffer.scope += 1
-    self.buffer.scopeline("__io.write(__e)")
+    self.buffer.scopeline("__io.write(str(__e))")
     # We rely on a hack in maybePrintNewline to determine
     # that the last token was an expression and to output the \n at scope+1
     self.buffer.scope -= 1
@@ -160,6 +161,16 @@ class ViewBuilder(object):
     elif token[0] == Token.ONELINE:
       self.writeCode(token[1])
     elif token[0] == Token.TEXT:
+      self.writeText(token[1])
+    elif token[0] == Token.PRINTLINE:
+      self.writeText(token[1])
+    elif token[0] == Token.XMLFULLSTART:
+      self.writeText(token[1])
+    elif token[0] == Token.XMLSTART:
+      self.writeText(token[1])
+    elif token[0] == Token.XMLEND:
+      self.writeText(token[1])
+    elif token[0] == Token.XMLSELFCLOSE:
       self.writeText(token[1])
     elif token[0] == Token.PARENEXPRESSION:
       self.writeExpression(token[1])
@@ -209,6 +220,6 @@ class ViewBuilder(object):
     logging.debug('Parsed code: %s', code)
     block = compile(code, "view", "exec")
     exec(block,globals(),locals())
-
+    #ToDo by (hoseinyeganloo@gmail.com): create caching of template method
     # Builds a method which can render a template
     return locals()['template']
