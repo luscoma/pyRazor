@@ -5,7 +5,7 @@
 """
 
 import unittest
-import pyrazor
+import razorview
 import cgi
 import tempfile
 import textwrap

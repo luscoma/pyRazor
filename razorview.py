@@ -3,39 +3,22 @@
 import cgi
 import logging
 
-import lex
 import types
 
-from ViewLoader import ViewLoader
+import pyRazor
 
 from lex import Token
 from io import StringIO
-
-  
-def ParseView(text, ignore_whitespace):
-  """Creates a razorview from template text.
-
-  Args:
-    text: The template text to render
-    ignore_whitespace: If true whitespace at the beghning of each line is
-        stripped when parsing.
-  """
-  lexer = lex.RazorLexer.create(ignore_whitespace)
-  builder = ViewBuilder(lexer.scope)
-  for token in lexer.scan(text):
-    logging.debug('Token scanned: %s', token)
-    builder.parse(token)
-  return View(builder, ignore_whitespace)
 
 
 class View(object):
   """A razor view"""
   
   def __init__(self, builder, ignore_whitespace):
-    self.renderer = types.MethodType(builder.Build(), self)
+    self.renderer = types.MethodType(builder, self)
     self.ignore_whitespace = ignore_whitespace
-    self._tmplFile = None
-    self._tmplModel = None
+    self.__layout = None
+    self.__layoutModel = None
     self._value = ''
     self._body = ''
     self._Section = dict()
@@ -45,15 +28,10 @@ class View(object):
     self.RenderTo(io, model)
     self._value = io.getvalue()
     io.close()
-    if(self._tmplFile != None):
-        view = ParseView(ViewLoader.Load(self._tmplFile), self.ignore_whitespace)
-        self._value = view._tmplRender(self._value,self._tmplModel)
+    if(self.__layout != None):
+        self._value = pyRazor.RenderLayout(self.__layout, self._value, self.__layoutModel, self.ignore_whitespace)
     return self._value
 
-  def _tmplRender(self,body,model=None):
-      """ Render view as a template(layout). this method enables body method! """
-      self._body = body
-      return self.Render(model)
 
   def RenderTo(self, io, model=None):
     self.model = model
@@ -62,13 +40,14 @@ class View(object):
 
   ## Methods below here are expected to be called from within the template
   def tmpl(self, file, submodel=None):
-    self._tmplModel = submodel if submodel is not None else self.model
-    self._tmplFile = file
+    chModel = submodel if submodel is not None else self.model
+    view = pyRazor.RenderFile(file, submodel, self.ignore_whitespace)
+    self.io.write(view)
 
   def wrap(self, file, submodel=None):
-    chModel = submodel if submodel is not None else self.model
-    view = ParseView(ViewLoader.Load(file), self.ignore_whitespace)
-    view.RenderTo(self.io,chModel)
+    self.__layoutModel = submodel if submodel is not None else self.model
+    self.__layout = file
+
 
   def section(self, name):
     # TODO(alusco): Output a section

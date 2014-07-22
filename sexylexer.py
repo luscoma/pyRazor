@@ -49,7 +49,7 @@ class _InputScanner(object):
     """
     self._position = 0
     self.lexer = lexer
-    self.input = re.sub("@#.*#@", "", input, flags=re.S)
+    self.input = input
     self.Mode = ScannerMode.Text
 
 
