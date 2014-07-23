@@ -3,7 +3,7 @@
 import unittest
 from scopestack import ScopeStack
 
-STEP = 5
+STEP = "     "
 
 class CallbackCounter:
   count = 0
@@ -24,7 +24,7 @@ class ScopeStackTest(unittest.TestCase):
     callback = lambda: scopeCallback(counter)
 
     # Push a callback onto stack
-    self.scope.handleIndentation(0)
+    self.scope.handleIndentation("")
     self.scope.indentstack.markScope(callback)
 
     # Calls the stack with a deeper indent
@@ -33,12 +33,12 @@ class ScopeStackTest(unittest.TestCase):
     self.assertEquals(0, counter.count)
 
     # Falls back to the original scope
-    self.scope.handleIndentation(0)
+    self.scope.handleIndentation("")
     self.assertEquals(1, counter.count)
 
   def testSingleScope(self):
     """Tests that a single scope is registered correctly"""
-    self.scope.handleIndentation(0)
+    self.scope.handleIndentation("")
     self.scope.enterScope()
     self.scope.handleIndentation(STEP)
     self.assertEquals(1, self.scope.getScope())
@@ -49,12 +49,12 @@ class ScopeStackTest(unittest.TestCase):
     self.scope.handleIndentation(STEP)
     self.assertEquals(1, self.scope.getScope())
 
-    self.scope.handleIndentation(0)
+    self.scope.handleIndentation("")
     self.assertEquals(0, self.scope.getScope())
 
   def testMultiScope(self):
     """Tests a multiscope callback is called correctly"""
-    self.scope.handleIndentation(0)
+    self.scope.handleIndentation("")
     self.assertEquals(0, self.scope.getScope())
     self.scope.enterScope()
 
@@ -72,7 +72,7 @@ class ScopeStackTest(unittest.TestCase):
     self.scope.handleIndentation(STEP)
     self.assertEquals(1, self.scope.getScope())
 
-    self.scope.handleIndentation(0)
+    self.scope.handleIndentation("")
     self.assertEquals(0, self.scope.getScope())
 
 if __name__ == '__main__':

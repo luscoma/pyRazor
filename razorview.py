@@ -1,13 +1,12 @@
 # Alex Lusco
 
-import cgi
+import html
 import logging
-
+import re
 import types
+import lex
+import hashlib
 
-import pyRazor
-
-from lex import Token
 from io import StringIO
 
 
@@ -32,7 +31,6 @@ class View(object):
         self._value = pyRazor.RenderLayout(self.__layout, self._value, self.__layoutModel, self.ignore_whitespace)
     return self._value
 
-
   def RenderTo(self, io, model=None):
     self.model = model
     self.io = io
@@ -41,13 +39,12 @@ class View(object):
   ## Methods below here are expected to be called from within the template
   def tmpl(self, file, submodel=None):
     chModel = submodel if submodel is not None else self.model
-    view = pyRazor.RenderFile(file, submodel, self.ignore_whitespace)
+    view = pyRazor.RenderFile(file, chModel, self.ignore_whitespace)
     self.io.write(view)
 
   def wrap(self, file, submodel=None):
     self.__layoutModel = submodel if submodel is not None else self.model
     self.__layout = file
-
 
   def section(self, name):
     # TODO(alusco): Output a section
@@ -133,31 +130,31 @@ class ViewBuilder(object):
     return self.cache
 
   def parse(self, token):
-    if token[0] == Token.CODE:
+    if token[0] == lex.Token.CODE:
       self.writeCode(token[1])
-    elif token[0] == Token.MULTILINE:
+    elif token[0] == lex.Token.MULTILINE:
       self.writeCode(token[1])
-    elif token[0] == Token.ONELINE:
+    elif token[0] == lex.Token.ONELINE:
       self.writeCode(token[1])
-    elif token[0] == Token.TEXT:
+    elif token[0] == lex.Token.TEXT:
       self.writeText(token[1])
-    elif token[0] == Token.PRINTLINE:
+    elif token[0] == lex.Token.PRINTLINE:
       self.writeText(token[1])
-    elif token[0] == Token.XMLFULLSTART:
+    elif token[0] == lex.Token.XMLFULLSTART:
       self.writeText(token[1])
-    elif token[0] == Token.XMLSTART:
+    elif token[0] == lex.Token.XMLSTART:
       self.writeText(token[1])
-    elif token[0] == Token.XMLEND:
+    elif token[0] == lex.Token.XMLEND:
       self.writeText(token[1])
-    elif token[0] == Token.XMLSELFCLOSE:
+    elif token[0] == lex.Token.XMLSELFCLOSE:
       self.writeText(token[1])
-    elif token[0] == Token.PARENEXPRESSION:
+    elif token[0] == lex.Token.PARENEXPRESSION:
       self.writeExpression(token[1])
-    elif token[0] == Token.ESCAPED:
+    elif token[0] == lex.Token.ESCAPED:
       self.writeText(token[1])
-    elif token[0] == Token.EXPRESSION:
+    elif token[0] == lex.Token.EXPRESSION:
       self.writeExpression(token[1])
-    elif token[0]== Token.NEWLINE:
+    elif token[0]== lex.Token.NEWLINE:
       self.maybePrintNewline()
       self.buffer.setscope(self.scope.getScope()+1)
 
@@ -165,7 +162,7 @@ class ViewBuilder(object):
 
   def maybePrintIndent(self):
     """Handles situationally printing indention"""
-    if self.lasttoken[0] != Token.NEWLINE:
+    if self.lasttoken[0] != lex.Token.NEWLINE:
       return
 
     if len(self.lasttoken[1]) > 0:
@@ -177,8 +174,8 @@ class ViewBuilder(object):
       return
 
     # Anywhere we writecode does not need the new line character
-    no_new_line = (Token.CODE, Token.MULTILINE, Token.ONELINE)
-    up_scope = (Token.EXPRESSION, Token.PARENEXPRESSION)
+    no_new_line = (lex.Token.CODE, lex.Token.MULTILINE, lex.Token.ONELINE)
+    up_scope = (lex.Token.EXPRESSION, lex.Token.PARENEXPRESSION)
     if not self.lasttoken[0] in no_new_line:
       if self.lasttoken[0] in up_scope:
         self.buffer.scope += 1
@@ -194,11 +191,53 @@ class ViewBuilder(object):
   def Build(self):
     # Build our code and indent it one
     code = self.getTemplate()
-
     # Compile this code
     logging.debug('Parsed code: %s', code)
     block = compile(code, "view", "exec")
     exec(block,globals(),locals())
-    #ToDo by (hoseinyeganloo@gmail.com): create caching of template method
     # Builds a method which can render a template
     return locals()['template']
+
+
+class pyRazor:
+    __mem = dict()
+    @staticmethod
+    def __Load(name):
+        f = open(name)
+        view = f.read()
+        f.close()
+        return view
+
+    @staticmethod
+    def __ParseView(text, ignore_whitespace):
+        text = re.sub("@#.*#@", "", text, flags=re.S)
+        lexer = lex.RazorLexer.create(ignore_whitespace)
+        builder = ViewBuilder(lexer.scope)
+        for token in lexer.scan(text):
+            builder.parse(token)
+        return builder.Build()
+
+    @staticmethod
+    def __GetView(name, ignore_whitespace):
+        if name not in pyRazor.__mem.keys():
+            pyRazor.__mem[name] = pyRazor.__ParseView(pyRazor.__Load(name), ignore_whitespace)
+        return View(pyRazor.__mem[name], ignore_whitespace)
+
+    @staticmethod
+    def Render(text, model=None, ignore_whitespace=False):
+        key = hashlib.md5(text.encode('utf-8')).hexdigest()
+        if str(key) not in pyRazor.__mem.keys():
+            pyRazor.__mem[key] = pyRazor.__ParseView(text, ignore_whitespace)
+        return View(pyRazor.__mem[key], ignore_whitespace).Render(model)
+
+
+    @staticmethod
+    def RenderFile(address, model=None, ignore_whitespace=False):
+        view = pyRazor.__GetView(address,ignore_whitespace)
+        return view.Render(model)
+
+    @staticmethod
+    def RenderLayout(address, body, model=None, ignore_whitespace=False):
+        view = pyRazor.__GetView(address,ignore_whitespace)
+        view._body = body
+        return view.Render(model)

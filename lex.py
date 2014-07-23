@@ -1,6 +1,6 @@
 # Alex Lusco
 import sexylexer
-import cgi
+import html
 from scopestack import ScopeStack
 import re
 
@@ -39,7 +39,7 @@ class RazorLexer(object):
     lex.rules = (
         (Token.NEWLINE, (r"[\r]?[\n][ \t]*", bind(lex.newline))),
         (Token.ESCAPED, (r"@@", bind(lex.escaped))),
-        (Token.LINECOMMENT, (r"@#.*$", bind(lex.linecomment))),
+        (Token.LINECOMMENT, (r"@#[^\r\n]*?$", bind(lex.linecomment))),
         (Token.ONELINE, (r"@(?:import|from|model) .+$", bind(lex.oneline))),
         (Token.MULTILINE, (r"@\w*.*:$", bind(lex.multiline))),
         (Token.PARENEXPRESSION, (r"@!?\(", bind(lex.paren_expression))),
@@ -131,8 +131,8 @@ class RazorLexer(object):
     # Our token here is either @!( or @(
     if not self.shouldEscape(token):
       return scanner.input[start:end-1]
-    # We wrap the expression in a call to cgi.escape
-    return "cgi.escape(str(" + scanner.input[start:end-1] + "))"
+    # We wrap the expression in a call to html.escape
+    return "html.escape(str(" + scanner.input[start:end-1] + "))"
 
   def multiline(self, scanner, token):
     """Handles multiline expressions"""
@@ -170,7 +170,7 @@ class RazorLexer(object):
   def expression(self, scanner, token):
     if not self.shouldEscape(token):
       return token[2:]
-    return "cgi.escape(str(" + token[1:] + "))"
+    return "html.escape(str(" + token[1:] + "))"
 
   def oneline(self, scanner, token):
     lower_token = token.lower()

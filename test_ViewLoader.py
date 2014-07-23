@@ -1,7 +1,7 @@
 __author__ = 'hoseinyeganloo@gmail.com'
 
 import unittest
-import pyRazor
+from razorview import pyRazor
 
 
 class MyTestCase(unittest.TestCase):
