@@ -6,6 +6,7 @@ import re
 import types
 import lex
 import hashlib
+import os
 
 from io import StringIO
 
@@ -201,12 +202,23 @@ class ViewBuilder(object):
 
 class pyRazor:
     __mem = dict()
+    ViewRoot = [""]
+
     @staticmethod
     def __Load(name):
-        f = open(name)
-        view = f.read()
-        f.close()
-        return view
+        for path in pyRazor.ViewRoot:
+            p = os.path.join(path, name)
+            if os.path.exists(p):
+                f = open(p)
+                view = f.read()
+                f.close()
+                return view
+        error = ""
+        for path in pyRazor.ViewRoot:
+            error += os.path.join(path, name) + " -->  Not Found!\r\n"
+        raise FileNotFoundError(error)
+
+
 
     @staticmethod
     def __ParseView(text, ignore_whitespace):
