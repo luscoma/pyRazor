@@ -33,6 +33,10 @@ class UnknownTokenError(TokenError):
   """
   pass
 
+class ScannerMode:
+    Text = "TEXT"
+    CODE = "CODE"
+
 class _InputScanner(object):
   """ This class manages the scanning of a specific input. An instance of it is
       returned when scan() is called. It is built to be great for iteration. This is
@@ -46,8 +50,8 @@ class _InputScanner(object):
     self._position = 0
     self.lexer = lexer
     self.input = input
-    self.ignoreRules = False
-    self.regex_line = re.compile(".+$", re.MULTILINE)
+    self.Mode = ScannerMode.Text
+
 
   def __iter__(self):
     """ All of the code for iteration is controlled by the class itself.
@@ -56,14 +60,12 @@ class _InputScanner(object):
     """
     return self
 
-  def next(self):
-    """ Used for iteration. It returns token after token until there
-        are no more tokens. (change this to __next__(self) if using Py3.0)
-    """
+  def __next__(self):
     value = self._next()
     while value[1] is None:
       value = self._next()
     return value
+
 
   def _next(self):
     if not self.done_scanning():
@@ -84,14 +86,12 @@ class _InputScanner(object):
     if self.done_scanning():
         return None
 
-    # If ignore rules
-    if self.ignoreRules:
-      match = self.regex_line.match(self.input, self._position)
-      self._position = match.end()
-      return "CODE", match.group().lstrip(' \t')
-
     # Try to match a token
-    match = self.lexer.regexc.match(self.input, self._position)
+    if self.Mode == ScannerMode.CODE:
+      match = self.lexer.regex_line.match(self.input, self._position)
+    else:
+      match = self.lexer.regexc.match(self.input, self._position)
+
     if match is None:
       lineno = self.input[:self._position].count("\n") + 1
       raise UnknownTokenError(self.input[self._position], lineno)
@@ -115,23 +115,32 @@ class Lexer(object):
       tokens one-by-one. It is meant to be used through iterating.
   """
 
-  def __init__(self, rules, case_sensitive=False):
+  def __init__(self, rules, mrules, case_sensitive=False):
     """ Set up the lexical scanner. Build and compile the regular expression
         and prepare the whitespace searcher.
     """
     self._callbacks = {}
     self.case_sensitive = case_sensitive
     parts = []
+    mparts = []
     for name, rule in rules:
       if not isinstance(rule, str):
         rule, callback = rule
         self._callbacks[name] = callback
       parts.append("(?P<%s>%s)" % (name, rule))
+
+    for name, mrule in mrules:
+      if not isinstance(mrule, str):
+        mrule, callback = mrule
+        self._callbacks[name] = callback
+      mparts.append("(?P<%s>%s)" % (name, mrule))
+
     if self.case_sensitive:
       flags = re.M
     else:
       flags = re.M|re.I
 
+    self.regex_line = re.compile("|".join(mparts), flags)
     self.regexc = re.compile("|".join(parts), flags)
 
   def scan(self, input):

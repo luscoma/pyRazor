@@ -1,0 +1,37 @@
+<html>
+    <head>
+        <title>@model</title>
+    </head>
+    <body>@#
+@helper test():
+          @:
+            a = 123
+            b = 321
+            if False:
+                a = 321
+            else:
+                if True:
+                    a = '111'
+                    b = '222'
+
+            return a+b#@
+<ul>
+@for i in [1,2,3,4,5]:
+    @:
+        a = 2
+        <li id="@(i)">@!(x = i/2)</li>
+        b = 3
+        <li>@(b)</li>
+        <li>
+            @:
+                a= 43
+                <span>a</span>
+                print('print("hosein")')
+                <text>123</text>
+        </li>
+</ul>
+        @#test()
+        <p>@model</p>
+        @view.body()
+    </body>
+</html>

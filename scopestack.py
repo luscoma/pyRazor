@@ -28,7 +28,7 @@ class IndentStack(object):
     """Returns the level of indentation for the this scope"""
     if len(self.stack) > 0:
       return self.stack[-1]
-    return 0
+    return ['', 0]
 
   def getRelativeIndentation(self):
     """Returns the relative indent of this line relative to its scope"""
@@ -39,29 +39,30 @@ class IndentStack(object):
 
   def handleIndentation(self, indent):
     """Updates the current indention level"""
-    self._popIndentation(indent)
+    il = len(indent)
+    self._popIndentation(il)
     if self.mark:
-      self._pushIndentation(indent)
+      self._pushIndentation(indent, il)
       self.mark = False
-    self.indentation = indent
+    self.indentation = il
 
   def _popIndentation(self, indent):
     """Tries to pop any indents greater than this one"""
     # Pop any indents higher than our current level
-    while len(self.stack) > 0 and self.stack[-1] > indent:
-      self._tryPopHandler(self.stack.pop())
+    while len(self.stack) > 0 and self.stack[-1][1] > indent:
+      self._tryPopHandler(self.stack.pop()[1])
 
   def _tryPopHandler(self, indent):
     """Attempts to pop any scope handlers"""
-    if self.handlers.has_key(indent):
+    if indent in self.handlers:
       self.handlers.pop(indent)()
 
-  def _pushIndentation(self, indent):
+  def _pushIndentation(self, indent, il):
     """Pushes this identation onto the stack"""
     # Check if we need to push this indent on the stack
-    if indent > self.getScopeIndentation():
-      self.stack.append(indent)
-      self.handlers[indent] = self.markHandler
+    if il > self.getScopeIndentation()[1]:
+      self.stack.append((indent, il))
+      self.handlers[il] = self.markHandler
     elif self.markHandler is not None:
       # This was a case where a multiline token has no 
       self.markHandler()
