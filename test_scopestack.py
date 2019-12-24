@@ -2,6 +2,7 @@
 
 import unittest
 from scopestack import ScopeStack
+import logging
 
 STEP = "     "
 
@@ -14,7 +15,7 @@ class ScopeStackTest(unittest.TestCase):
     self.scope = ScopeStack()
 
   def testScopeStartsAtZero(self):
-    self.assertEquals(0, self.scope.getScope(), "Scope didn't start at zero")
+    self.assertEqual(0, self.scope.getScope(), "Scope didn't start at zero")
 
   def testCallback(self):
     """Tests that the scope stack will callback when not in a scope"""
@@ -29,51 +30,52 @@ class ScopeStackTest(unittest.TestCase):
 
     # Calls the stack with a deeper indent
     self.scope.handleIndentation(STEP)
-    self.assertEquals(0, self.scope.getScope())
-    self.assertEquals(0, counter.count)
+    self.assertEqual(0, self.scope.getScope())
+    self.assertEqual(0, counter.count)
 
     # Falls back to the original scope
     self.scope.handleIndentation("")
-    self.assertEquals(1, counter.count)
+    self.assertEqual(1, counter.count)
 
   def testSingleScope(self):
     """Tests that a single scope is registered correctly"""
     self.scope.handleIndentation("")
     self.scope.enterScope()
     self.scope.handleIndentation(STEP)
-    self.assertEquals(1, self.scope.getScope())
+    self.assertEqual(1, self.scope.getScope())
 
     self.scope.handleIndentation(2*STEP)
-    self.assertEquals(1, self.scope.getScope())
+    self.assertEqual(1, self.scope.getScope())
 
     self.scope.handleIndentation(STEP)
-    self.assertEquals(1, self.scope.getScope())
+    self.assertEqual(1, self.scope.getScope())
 
     self.scope.handleIndentation("")
-    self.assertEquals(0, self.scope.getScope())
+    self.assertEqual(0, self.scope.getScope())
 
   def testMultiScope(self):
     """Tests a multiscope callback is called correctly"""
     self.scope.handleIndentation("")
-    self.assertEquals(0, self.scope.getScope())
+    self.assertEqual(0, self.scope.getScope())
     self.scope.enterScope()
 
     self.scope.handleIndentation(STEP)
-    self.assertEquals(1, self.scope.getScope())
+    self.assertEqual(1, self.scope.getScope())
     self.scope.enterScope()
 
     self.scope.handleIndentation(2*STEP)
-    self.assertEquals(2, self.scope.getScope())
+    self.assertEqual(2, self.scope.getScope())
     self.scope.enterScope()
 
     self.scope.handleIndentation(2*STEP)
-    self.assertEquals(2, self.scope.getScope())
+    self.assertEqual(2, self.scope.getScope())
 
     self.scope.handleIndentation(STEP)
-    self.assertEquals(1, self.scope.getScope())
+    self.assertEqual(1, self.scope.getScope())
 
     self.scope.handleIndentation("")
-    self.assertEquals(0, self.scope.getScope())
+    self.assertEqual(0, self.scope.getScope())
 
 if __name__ == '__main__':
+      logging.basicConfig(level=logging.ERROR)
       unittest.main()

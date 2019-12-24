@@ -28,7 +28,7 @@ class Token:
 
 def bind(handler):
   """Simple binding function"""
-  return lambda scanner, token: handler(scanner, token);
+  return lambda scanner, token: handler(scanner, token)
 
 class RazorLexer(object):
   """Encapsulates the razor token logic"""
@@ -114,7 +114,7 @@ class RazorLexer(object):
     for c in scanner.input[start:]:
       if plevel == 0:
         # Halt when we close our braces
-        break;
+        break
       elif c == '(':
         plevel += 1
       elif c == ')':
