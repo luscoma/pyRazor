@@ -1,7 +1,7 @@
 # Alex Lusco
-import sexylexer
+from pyRazor import sexylexer
 import html
-from scopestack import ScopeStack
+from pyRazor.scopestack import ScopeStack
 import re
 
 class Token:

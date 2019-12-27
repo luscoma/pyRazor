@@ -5,6 +5,21 @@ The Razor engine is a view renderer for ASP.net MVC3 that displays html views in
 
 That said the goal of this implementation is to implement a view template engine that is based on the razor engine but suitable for python and simplifies some of the sharp corners of razor when working on non-xml/html.  Ideally these templates should be compilable into py files for simplified/faster execution.  Some minor modifications to the sytax can be afforded especially considering python and c# differences when it comes to indent levels and code block designation but on the whole the concepts and tokens are directly ported when possible.  Any variation from mvc's razor is reported in the remaining portions of this document.
 
+### Install:
+    pip install pyRazor
+
+### Usage:
+    from pyRazor import razorview
+    from flask import Flask
+    app = Flask(__name__)
+    view = razorview.pyRazor()
+
+    @app.route('/')
+    def hello_world():
+        return view.RenderFile('path-to-your-view-file.pyhtml')
+
+    app.run('127.0.0.1',8085)
+
 ### @model
 ---------------------------------
 In razor a view has access to a model parameter which has a handful of properties useful in view construction.  This is especially important in statically type languages such as csharp so that accurate type checking can be performed on view code.  In pyRazor the model is accessed via the @model directive:
