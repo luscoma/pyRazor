@@ -4,7 +4,7 @@ import html
 import logging
 import re
 import types
-import lex
+from pyRazor import lex
 import hashlib
 import os
 
